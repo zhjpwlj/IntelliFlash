@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能闪卡 (IntelliFlash) - Gemini AI 版</title>
+    <meta name="description" content="一个集成了间隔重复、多种学习模式和社区共享的强大闪卡应用。由 Gemini AI 驱动。">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4A90E2">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/4A90E2/FFFFFF?text=IF">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 自定义样式和动画 */
+        :root {
+            --primary-color: #4A90E2;
+            --primary-color-dark: #357ABD;
+            --background-light: #f7fafc;
+            --background-dark: #1a202c;
+            --text-light: #2d3748;
+            --text-dark: #e2e8f0;
+            --card-bg-light: #ffffff;
+            --card-bg-dark: #2d3748;
+        }
+        .dark {
+            --background-light: var(--background-dark);
+            --text-light: var(--text-dark);
+            --card-bg-light: var(--card-bg-dark);
+        }
+        body {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .card {
+            background-color: var(--card-bg-light);
+            transition: background-color 0.3s;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .card-face-back {
+            transform: rotateY(180deg);
+        }
+        .srs-btn-again { background-color: #EF5350; }
+        .srs-btn-hard { background-color: #FFA726; }
+        .srs-btn-good { background-color: #66BB6A; }
+        .srs-btn-easy { background-color: #29B6F6; }
+
+        /* 匹配游戏样式 */
+        .match-item.selected {
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+        }
+        .match-item.matched {
+            border-color: #66BB6A;
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.5s;
+        }
+        .dark .match-item.matched {
+             background-color: #2d3748;
+             color: #66BB6A;
+        }
+
+        /* 加载动画 */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 模态框动画 */
+        .modal-content {
+            animation: slide-up 0.3s ease-out;
+        }
+        @keyframes slide-up {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans">
+
+    <!-- 全局加载指示器 -->
+    <div id="global-loader" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 hidden">
+        <div class="loader"></div>
+    </div>
+    
+    <!-- 全局通知 -->
+    <div id="toast-notification" class="fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg hidden transition-opacity duration-300">
+        <p id="toast-message"></p>
+    </div>
+
+    <!-- 主容器 -->
+    <div id="app-container" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- 导航栏 -->
+        <nav class="py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <i class="fas fa-brain mr-2"></i>IntelliFlash
+            </h1>
+            <div>
+                <button id="theme-toggle" class="mr-4 text-xl"><i class="fas fa-sun"></i></button>
+                <div id="user-info" class="hidden inline-block">
+                    <span id="user-email" class="mr-4"></span>
+                    <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">登出</button>
+                </div>
+                <div id="auth-buttons" class="inline-block">
+                    <button id="login-modal-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">登录</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主页面 -->
+        <main id="main-page">
+            <div class="my-6 text-center">
+                <button id="create-set-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    <i class="fas fa-plus mr-2"></i>创建新卡组
+                </button>
+                 <button id="public-library-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg text-lg ml-4">
+                    <i class="fas fa-globe mr-2"></i>公开卡组库
+                </button>
+            </div>
+
+            <!-- 我的卡组 -->
+            <section id="my-sets-section">
+                <h2 class="text-2xl font-semibold mb-4 border-b pb-2">我的卡组</h2>
+                <div id="sets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- 卡组卡片将在这里动态生成 -->
+                </div>
+            </section>
+        </main>
+        
+        <!-- 公开卡组库页面 -->
+        <main id="public-library-page" class="hidden">
+            <div class="my-6 flex justify-between items-center">
+                 <h2 class="text-2xl font-semibold">公开卡组库</h2>
+                 <button id="back-to-my-sets-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">
+                    <i class="fas fa-arrow-left mr-2"></i>返回我的卡组
+                </button>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="public-search-input" placeholder="搜索公开卡组..." class="w-full p-3 rounded-lg border bg-white dark:bg-gray-700">
+            </div>
+            <div id="public-sets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 公开卡组将在这里动态生成 -->
+            </div>
+        </main>
+
+        <!-- 学习页面 -->
+        <div id="study-page" class="hidden">
+            <!-- 学习页面内容将在这里动态生成 -->
+        </div>
+        
+        <!-- 统计页面 -->
+        <div id="stats-page" class="hidden p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+             <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold">学习统计</h2>
+                <button id="back-to-main-from-stats" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">
+                    <i class="fas fa-arrow-left mr-2"></i>返回
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">记忆曲线 (SRS 状态分布)</h3>
+                    <canvas id="srs-status-chart"></canvas>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">每周复习次数</h3>
+                    <canvas id="review-activity-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 登录/注册模态框 -->
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+        <div class="modal-content bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h2 id="auth-modal-title" class="text-2xl font-bold mb-6 text-center">登录</h2>
+            <!-- 邮箱/密码表单 -->
+            <form id="email-password-form">
+                <input type="email" id="email-input" placeholder="邮箱" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700" required>
+                <input type="password" id="password-input" placeholder="密码 (至少6位)" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700" required>
+                <button type="submit" id="email-login-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded mb-2">登录</button>
+                <button type="button" id="email-register-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded">注册</button>
+            </form>
+            <div class="my-4 text-center text-gray-500">或</div>
+            <!-- Google 登录 -->
+            <button id="google-login-btn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded flex items-center justify-center shadow-sm hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+                <img src="https://www.google.com/favicon.ico" alt="Google" class="w-6 h-6 mr-3">
+                使用 Google 登录
+            </button>
+            <button id="close-auth-modal" class="absolute top-4 right-4 text-2xl text-gray-600 dark:text-gray-400">&times;</button>
+        </div>
+    </div>
+
+    <!-- 创建/编辑卡组模态框 -->
+    <div id="set-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+        <div class="modal-content bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-4xl h-5/6 flex flex-col">
+            <h2 id="set-modal-title" class="text-2xl font-bold mb-4">创建新卡组</h2>
+            <form id="set-form" class="flex flex-col flex-grow">
+                <input type="hidden" id="set-id-input">
+                <input type="text" id="set-title-input" placeholder="卡组标题，例如“高频英语词汇”" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700" required>
+                <textarea id="set-description-input" placeholder="卡组描述" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700" rows="2"></textarea>
+                
+                <div class="flex items-center mb-4">
+                    <label for="set-public-checkbox" class="mr-2">公开分享此卡组:</label>
+                    <input type="checkbox" id="set-public-checkbox" class="h-5 w-5">
+                </div>
+                
+                <!-- AI 生成功能 -->
+                <div class="bg-blue-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
+                    <h3 class="font-semibold mb-2 text-lg text-blue-800 dark:text-blue-300">✨ AI 智能生成卡片</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="ai-topic-input" placeholder="输入主题，如“太阳系行星”" class="w-full p-2 border rounded bg-white dark:bg-gray-600">
+                        <button type="button" id="ai-generate-cards-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded whitespace-nowrap">生成卡片</button>
+                    </div>
+                </div>
+
+
+                <h3 class="font-semibold mb-2">卡片</h3>
+                <div id="cards-container" class="flex-grow overflow-y-auto pr-2">
+                    <!-- 卡片输入框将在这里动态生成 -->
+                </div>
+
+                <div class="mt-4">
+                    <button type="button" id="add-card-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-plus mr-2"></i>添加卡片
+                    </button>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button type="button" id="cancel-set-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mr-4">取消</button>
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">保存卡组</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // 导入 Firebase 模块。这些 URL 是 Firebase 官方提供的 CDN。
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            getDocs, 
+            doc, 
+            updateDoc, 
+            deleteDoc, 
+            query, 
+            where, 
+            writeBatch,
+            getDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { 
+            getStorage, 
+            ref, 
+            uploadBytes, 
+            getDownloadURL 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        // ===================================================================================
+        // 🔥 配置 (重要!)
+        // ===================================================================================
+        // 请在这里填入你自己的 Firebase 和 Gemini 项目配置。
+        const firebaseConfig = {
+          apiKey: "AIzaSyDyYXFukIb4R16o8mx7cl9ZUzsCO6Y6fro",
+          authDomain: "intelliflash-6574c.firebaseapp.com",
+          projectId: "intelliflash-6574c",
+          storageBucket: "intelliflash-6574c.firebasestorage.app",
+          messagingSenderId: "730575240954",
+          appId: "1:730575240954:web:d2771d613441f4731cd343",
+          measurementId: "G-XFP1RE80XN"
+        };
+        const GEMINI_API_KEY = "AIzaSyB4kejtqBehPI0Ri1e_huC35-7Gkw7dszk"; // 留空即可，Canvas 会自动提供
+        
+        // ===================================================================================
+        // 初始化 Firebase
+        // ===================================================================================
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        
+        let currentUser = null;
+        let srsStatusChart = null;
+        let reviewActivityChart = null;
+
+        // ===================================================================================
+        // 全局状态和 DOM 元素
+        // ===================================================================================
+        const globalLoader = document.getElementById('global-loader');
+        const mainPage = document.getElementById('main-page');
+        const studyPage = document.getElementById('study-page');
+        const statsPage = document.getElementById('stats-page');
+        const publicLibraryPage = document.getElementById('public-library-page');
+        const setsContainer = document.getElementById('sets-container');
+        const publicSetsContainer = document.getElementById('public-sets-container');
+        const toast = document.getElementById('toast-notification');
+        
+        // ===================================================================================
+        // 工具函数
+        // ===================================================================================
+        const showLoader = (text = '') => {
+            globalLoader.classList.remove('hidden');
+            // 可以添加文本提示，例如 "AI 正在生成..."
+        };
+        const hideLoader = () => globalLoader.classList.add('hidden');
+
+        function showToast(message, isError = false) {
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // ===================================================================================
+        // 主题切换
+        // ===================================================================================
+        const themeToggle = document.getElementById('theme-toggle');
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const icon = themeToggle.querySelector('i');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        // 初始化主题
+        if (localStorage.getItem('theme') === 'dark' || 
+           (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            themeToggle.querySelector('i').classList.replace('fa-sun', 'fa-moon');
+        }
+
+        // ===================================================================================
+        // 认证逻辑
+        // ===================================================================================
+        const authModal = document.getElementById('auth-modal');
+        const loginModalBtn = document.getElementById('login-modal-btn');
+        const closeAuthModalBtn = document.getElementById('close-auth-modal');
+        const authButtons = document.getElementById('auth-buttons');
+        const userInfo = document.getElementById('user-info');
+        
+        loginModalBtn.addEventListener('click', () => authModal.classList.remove('hidden'));
+        closeAuthModalBtn.addEventListener('click', () => authModal.classList.add('hidden'));
+        
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-email').textContent = user.displayName || user.email;
+                authButtons.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                authModal.classList.add('hidden');
+                loadUserSets();
+                initNotifications();
+            } else {
+                currentUser = null;
+                document.getElementById('user-email').textContent = '';
+                authButtons.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+                setsContainer.innerHTML = '<p class="text-center col-span-full">请先登录以查看或创建卡组。</p>';
+            }
+        });
+
+        // Google 登录
+        document.getElementById('google-login-btn').addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+                showToast('登录成功！');
+            } catch (error) {
+                console.error("Google 登录失败:", error);
+                showToast(`登录失败: ${error.message}`, true);
+            }
+        });
+
+        // 邮箱/密码登录和注册
+        const emailForm = document.getElementById('email-password-form');
+        emailForm.addEventListener('submit', e => e.preventDefault());
+
+        document.getElementById('email-login-btn').addEventListener('click', async () => {
+            const email = document.getElementById('email-input').value;
+            const password = document.getElementById('password-input').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showToast('登录成功！');
+            } catch (error) {
+                console.error("邮箱登录失败:", error);
+                showToast(`登录失败: ${error.message}`, true);
+            }
+        });
+
+        document.getElementById('email-register-btn').addEventListener('click', async () => {
+            const email = document.getElementById('email-input').value;
+            const password = document.getElementById('password-input').value;
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                showToast('注册成功，已自动登录！');
+            } catch (error) {
+                console.error("注册失败:", error);
+                showToast(`注册失败: ${error.message}`, true);
+            }
+        });
+
+        // 登出
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showToast('已成功登出。');
+                mainPage.classList.remove('hidden');
+                studyPage.classList.add('hidden');
+                statsPage.classList.add('hidden');
+                publicLibraryPage.classList.add('hidden');
+            } catch (error) {
+                console.error("登出失败:", error);
+                showToast(`登出失败: ${error.message}`, true);
+            }
+        });
+        
+        // ===================================================================================
+        // Gemini API 调用
+        // ===================================================================================
+        async function callGemini(prompt, jsonSchema = null) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
+            
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+            };
+
+            if (jsonSchema) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: jsonSchema,
+                };
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    console.error("Gemini API Error:", errorBody);
+                    throw new Error(`API 请求失败，状态码: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) {
+                    throw new Error("API 返回了无效的响应格式");
+                }
+                return text;
+            } catch (error) {
+                console.error("调用 Gemini API 时出错:", error);
+                throw error; // Re-throw the error to be caught by the caller
+            }
+        }
+
+        // ===================================================================================
+        // 卡组 CRUD 逻辑 (集成 AI)
+        // ===================================================================================
+        const setModal = document.getElementById('set-modal');
+        const createSetBtn = document.getElementById('create-set-btn');
+        const cancelSetBtn = document.getElementById('cancel-set-btn');
+        const addCardBtn = document.getElementById('add-card-btn');
+        const setForm = document.getElementById('set-form');
+        const cardsContainer = document.getElementById('cards-container');
+        const aiGenerateBtn = document.getElementById('ai-generate-cards-btn');
+
+        createSetBtn.addEventListener('click', () => openSetModal());
+        cancelSetBtn.addEventListener('click', () => setModal.classList.add('hidden'));
+
+        function openSetModal(set = null) {
+            setForm.reset();
+            document.getElementById('set-id-input').value = set ? set.id : '';
+            document.getElementById('set-modal-title').textContent = set ? '编辑卡组' : '创建新卡组';
+            document.getElementById('set-title-input').value = set ? set.title : '';
+            document.getElementById('set-description-input').value = set ? set.description : '';
+            document.getElementById('set-public-checkbox').checked = set ? set.isPublic : false;
+            
+            cardsContainer.innerHTML = '';
+            if (set && set.cards) {
+                set.cards.forEach(card => addCardInputs(card));
+            } else {
+                addCardInputs(); // 添加一组空的
+            }
+            setModal.classList.remove('hidden');
+        }
+
+        addCardBtn.addEventListener('click', () => addCardInputs());
+        
+        aiGenerateBtn.addEventListener('click', async () => {
+            const topic = document.getElementById('ai-topic-input').value;
+            if (!topic) {
+                showToast('请输入一个主题！', true);
+                return;
+            }
+            
+            showLoader();
+            try {
+                const prompt = `为以下主题生成一个包含10个术语和定义的闪卡列表：'${topic}'。请确保术语和定义简洁明了，适合制作成闪卡。`;
+                const schema = {
+                    type: "OBJECT",
+                    properties: {
+                        cards: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    term: { type: "STRING" },
+                                    definition: { type: "STRING" }
+                                },
+                                required: ["term", "definition"]
+                            }
+                        }
+                    },
+                    required: ["cards"]
+                };
+
+                const jsonString = await callGemini(prompt, schema);
+                const generatedData = JSON.parse(jsonString);
+
+                if (generatedData.cards && generatedData.cards.length > 0) {
+                    // 清空现有空卡片
+                    if (cardsContainer.children.length === 1 && 
+                        !cardsContainer.querySelector('.term-input').value && 
+                        !cardsContainer.querySelector('.definition-input').value) {
+                        cardsContainer.innerHTML = '';
+                    }
+                    generatedData.cards.forEach(card => addCardInputs(card));
+                    showToast('AI 已成功生成卡片！');
+                } else {
+                    showToast('AI 未能生成卡片，请尝试更换主题。', true);
+                }
+
+            } catch (error) {
+                showToast(`AI 生成失败: ${error.message}`, true);
+            } finally {
+                hideLoader();
+            }
+        });
+
+        function addCardInputs(card = {}) {
+            const cardId = card.id || `new_${Date.now()}_${Math.random()}`;
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'grid grid-cols-12 gap-2 mb-3 items-center card-input-group';
+            cardDiv.dataset.cardId = cardId;
+            
+            cardDiv.innerHTML = `
+                <div class="col-span-5">
+                    <textarea placeholder="正面" class="w-full p-2 border rounded bg-gray-100 dark:bg-gray-600 term-input" rows="2">${card.term || ''}</textarea>
+                </div>
+                <div class="col-span-5">
+                    <textarea placeholder="背面" class="w-full p-2 border rounded bg-gray-100 dark:bg-gray-600 definition-input" rows="2">${card.definition || ''}</textarea>
+                </div>
+                <div class="col-span-2 flex items-center justify-around">
+                    <label for="image-upload-${cardId}" class="cursor-pointer text-blue-500 hover:text-blue-700">
+                        <i class="fas fa-image"></i>
+                    </label>
+                    <input type="file" id="image-upload-${cardId}" class="hidden image-upload-input" accept="image/*">
+                    <img src="${card.imageUrl || ''}" class="w-8 h-8 object-cover ${card.imageUrl ? '' : 'hidden'} image-preview">
+                    <button type="button" class="text-red-500 hover:text-red-700 remove-card-btn"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+            cardsContainer.appendChild(cardDiv);
+
+            cardDiv.querySelector('.remove-card-btn').addEventListener('click', () => cardDiv.remove());
+            cardDiv.querySelector('.image-upload-input').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const preview = cardDiv.querySelector('.image-preview');
+                    preview.src = URL.createObjectURL(file);
+                    preview.classList.remove('hidden');
+                }
+            });
+        }
+
+        setForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                showToast('请先登录', true);
+                return;
+            }
+            showLoader();
+
+            const setId = document.getElementById('set-id-input').value;
+            const setData = {
+                title: document.getElementById('set-title-input').value,
+                description: document.getElementById('set-description-input').value,
+                isPublic: document.getElementById('set-public-checkbox').checked,
+                ownerId: currentUser.uid,
+                ownerName: currentUser.displayName || currentUser.email,
+                updatedAt: serverTimestamp(),
+            };
+
+            try {
+                let savedSetId = setId;
+                if (setId) { // 更新
+                    const setRef = doc(db, 'sets', setId);
+                    await updateDoc(setRef, setData);
+                } else { // 创建
+                    const docRef = await addDoc(collection(db, 'sets'), { ...setData, createdAt: serverTimestamp() });
+                    savedSetId = docRef.id;
+                }
+
+                // 处理卡片 (上传图片 + 保存卡片数据)
+                const cardInputGroups = cardsContainer.querySelectorAll('.card-input-group');
+                const batch = writeBatch(db);
+                
+                for (const group of cardInputGroups) {
+                    const term = group.querySelector('.term-input').value;
+                    const definition = group.querySelector('.definition-input').value;
+                    if (!term || !definition) continue; // 跳过空卡片
+                    
+                    const cardId = group.dataset.cardId;
+                    const cardRef = doc(collection(db, `sets/${savedSetId}/cards`), cardId.startsWith('new_') ? undefined : cardId);
+                    
+                    const cardData = {
+                        term,
+                        definition,
+                        // SRS 默认值
+                        easeFactor: 2.5,
+                        interval: 0,
+                        repetitions: 0,
+                        nextReview: new Date()
+                    };
+
+                    // 处理图片上传
+                    const imageInput = group.querySelector('.image-upload-input');
+                    const imageFile = imageInput.files[0];
+                    if (imageFile) {
+                        const imageRef = ref(storage, `card-images/${currentUser.uid}/${savedSetId}/${Date.now()}_${imageFile.name}`);
+                        const snapshot = await uploadBytes(imageRef, imageFile);
+                        cardData.imageUrl = await getDownloadURL(snapshot.ref);
+                    } else {
+                        cardData.imageUrl = group.querySelector('.image-preview').src || '';
+                    }
+
+                    batch.set(cardRef, cardData, { merge: true });
+                }
+                
+                await batch.commit();
+
+                showToast(`卡组已${setId ? '更新' : '创建'}！`);
+                setModal.classList.add('hidden');
+                loadUserSets();
+            } catch (error) {
+                console.error("保存卡组失败:", error);
+                showToast(`操作失败: ${error.message}`, true);
+            } finally {
+                hideLoader();
+            }
+        });
+
+        async function deleteSet(setId) {
+            if (!confirm('确定要删除这个卡组吗？所有相关的卡片和学习进度都将被永久删除。')) return;
+            showLoader();
+            try {
+                // TODO: 删除卡片子集合和图片
+                await deleteDoc(doc(db, 'sets', setId));
+                showToast('卡组已删除。');
+                loadUserSets();
+            } catch (error) {
+                console.error("删除卡组失败:", error);
+                showToast(`删除失败: ${error.message}`, true);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function loadUserSets() {
+            if (!currentUser) return;
+            showLoader();
+            try {
+                const q = query(collection(db, 'sets'), where("ownerId", "==", currentUser.uid));
+                const querySnapshot = await getDocs(q);
+                setsContainer.innerHTML = '';
+                if (querySnapshot.empty) {
+                    setsContainer.innerHTML = '<p class="text-center col-span-full">你还没有创建任何卡组。点击上方按钮开始吧！</p>';
+                }
+                for (const docSnap of querySnapshot.docs) {
+                    const set = { id: docSnap.id, ...docSnap.data() };
+                    const cardsSnapshot = await getDocs(collection(db, `sets/${set.id}/cards`));
+                    set.cardCount = cardsSnapshot.size;
+                    setsContainer.appendChild(createSetCard(set));
+                }
+            } catch (error) {
+                console.error("加载卡组失败:", error);
+                showToast('加载卡组失败', true);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function createSetCard(set, isPublic = false) {
+            const card = document.createElement('div');
+            card.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col justify-between';
+            
+            let buttonsHtml = '';
+            if (isPublic) {
+                buttonsHtml = `
+                    <button class="clone-set-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full">
+                        <i class="fas fa-clone mr-2"></i>克隆到我的卡组
+                    </button>
+                `;
+            } else {
+                buttonsHtml = `
+                    <div class="grid grid-cols-2 gap-2 mt-4">
+                        <button class="study-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                           <i class="fas fa-book-open mr-2"></i>学习
+                        </button>
+                        <button class="stats-btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded">
+                           <i class="fas fa-chart-line mr-2"></i>统计
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                         <button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
+                           <i class="fas fa-edit mr-2"></i>编辑
+                        </button>
+                        <button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                           <i class="fas fa-trash mr-2"></i>删除
+                        </button>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div>
+                    <h3 class="text-xl font-bold mb-2">${set.title}</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-2">${set.description || '没有描述'}</p>
+                    <p class="text-sm text-gray-500">${set.cardCount || 0} 张卡片</p>
+                    ${isPublic ? `<p class="text-sm text-gray-500 mt-1">创建者: ${set.ownerName || '匿名'}</p>` : ''}
+                </div>
+                <div class="mt-4">
+                    ${buttonsHtml}
+                </div>
+            `;
+
+            if (isPublic) {
+                card.querySelector('.clone-set-btn').addEventListener('click', () => cloneSet(set.id));
+            } else {
+                card.querySelector('.study-btn').addEventListener('click', () => startStudy(set.id));
+                card.querySelector('.stats-btn').addEventListener('click', () => showStatsPage(set.id));
+                card.querySelector('.edit-btn').addEventListener('click', async () => {
+                    const cardsSnapshot = await getDocs(collection(db, `sets/${set.id}/cards`));
+                    const cards = cardsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    openSetModal({ ...set, cards });
+                });
+                card.querySelector('.delete-btn').addEventListener('click', () => deleteSet(set.id));
+            }
+            return card;
+        }
+        
+        // ===================================================================================
+        // 公开卡组库逻辑
+        // ===================================================================================
+        document.getElementById('public-library-btn').addEventListener('click', () => {
+            mainPage.classList.add('hidden');
+            publicLibraryPage.classList.remove('hidden');
+            loadPublicSets();
+        });
+        
+        document.getElementById('back-to-my-sets-btn').addEventListener('click', () => {
+            mainPage.classList.remove('hidden');
+            publicLibraryPage.classList.add('hidden');
+        });
+        
+        let allPublicSets = [];
+        async function loadPublicSets() {
+            if (!currentUser) {
+                publicSetsContainer.innerHTML = '<p class="text-center col-span-full">请先登录以浏览公开卡组库。</p>';
+                return;
+            }
+            showLoader();
+            try {
+                const q = query(collection(db, 'sets'), where("isPublic", "==", true));
+                const querySnapshot = await getDocs(q);
+                allPublicSets = [];
+                for (const docSnap of querySnapshot.docs) {
+                    const set = { id: docSnap.id, ...docSnap.data() };
+                    // 不加载自己的公开卡组
+                    if (set.ownerId === currentUser.uid) continue;
+                    
+                    const cardsSnapshot = await getDocs(collection(db, `sets/${set.id}/cards`));
+                    set.cardCount = cardsSnapshot.size;
+                    allPublicSets.push(set);
+                }
+                displayPublicSets(allPublicSets);
+            } catch (error) {
+                console.error("加载公开卡组失败:", error);
+                showToast('加载公开卡组失败', true);
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        function displayPublicSets(sets) {
+             publicSetsContainer.innerHTML = '';
+             if (sets.length === 0) {
+                publicSetsContainer.innerHTML = '<p class="text-center col-span-full">目前没有公开的卡组。</p>';
+                return;
+            }
+            sets.forEach(set => {
+                publicSetsContainer.appendChild(createSetCard(set, true));
+            });
+        }
+        
+        document.getElementById('public-search-input').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredSets = allPublicSets.filter(set => 
+                set.title.toLowerCase().includes(searchTerm) || 
+                (set.description && set.description.toLowerCase().includes(searchTerm))
+            );
+            displayPublicSets(filteredSets);
+        });
+        
+        async function cloneSet(setId) {
+            if (!currentUser) {
+                showToast('请先登录', true);
+                return;
+            }
+            if (!confirm('确定要克隆这个卡组吗？它将被复制到“我的卡组”中。')) return;
+            showLoader();
+            try {
+                const originalSetRef = doc(db, 'sets', setId);
+                const originalSetSnap = await getDoc(originalSetRef);
+                if (!originalSetSnap.exists()) {
+                    throw new Error("原始卡组不存在");
+                }
+                const originalSetData = originalSetSnap.data();
+
+                // 1. 创建新的卡组
+                const newSetData = {
+                    title: originalSetData.title,
+                    description: originalSetData.description,
+                    isPublic: false, // 克隆后默认为私有
+                    ownerId: currentUser.uid,
+                    ownerName: currentUser.displayName || currentUser.email,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    clonedFrom: setId,
+                };
+                const newSetRef = await addDoc(collection(db, 'sets'), newSetData);
+
+                // 2. 复制所有卡片
+                const originalCardsRef = collection(db, `sets/${setId}/cards`);
+                const originalCardsSnap = await getDocs(originalCardsRef);
+                const batch = writeBatch(db);
+
+                originalCardsSnap.forEach(cardDoc => {
+                    const newCardRef = doc(collection(db, `sets/${newSetRef.id}/cards`));
+                    batch.set(newCardRef, cardDoc.data());
+                });
+
+                await batch.commit();
+                showToast('卡组克隆成功！');
+                loadUserSets(); // 刷新我的卡组列表
+            } catch (error) {
+                console.error("克隆卡组失败:", error);
+                showToast(`克隆失败: ${error.message}`, true);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // ===================================================================================
+        // 学习逻辑 (集成 AI)
+        // ===================================================================================
+        let currentSetCards = [];
+        let currentCardIndex = 0;
+        let currentSetId = null;
+
+        async function startStudy(setId) {
+            showLoader();
+            try {
+                currentSetId = setId;
+                const cardsSnapshot = await getDocs(collection(db, `sets/${setId}/cards`));
+                const allCardsInSet = cardsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                if (allCardsInSet.length === 0) {
+                    showToast('这个卡组里没有卡片！', true);
+                    return;
+                }
+                
+                // 过滤出需要复习的卡片
+                const now = new Date();
+                const dueCards = allCardsInSet.filter(card => {
+                    const nextReviewDate = card.nextReview.toDate ? card.nextReview.toDate() : new Date(card.nextReview);
+                    return nextReviewDate <= now;
+                });
+
+                if (dueCards.length === 0) {
+                     showToast('太棒了！今天没有需要复习的卡片。');
+                     return;
+                }
+                
+                currentSetCards = shuffleArray(dueCards); // 只学习到期的
+                currentCardIndex = 0;
+
+                mainPage.classList.add('hidden');
+                studyPage.classList.remove('hidden');
+                showStudyModeSelection(allCardsInSet); // 传递所有卡片用于生成干扰项
+
+            } catch (error) {
+                console.error("开始学习失败:", error);
+                showToast(`开始学习失败: ${error.message}`, true);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function showStudyModeSelection(allCards) {
+            studyPage.innerHTML = `
+                <div class="text-center p-8">
+                    <h2 class="text-3xl font-bold mb-2">选择学习模式</h2>
+                    <p class="text-gray-600 dark:text-gray-400 mb-8">今天有 ${currentSetCards.length} 张卡片需要复习。</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                        <button data-mode="flashcard" class="study-mode-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-6 px-4 rounded-lg text-xl">
+                            <i class="fas fa-clone mr-3"></i>翻卡学习
+                        </button>
+                        <button data-mode="spell" class="study-mode-btn bg-green-500 hover:bg-green-600 text-white font-bold py-6 px-4 rounded-lg text-xl">
+                            <i class="fas fa-keyboard mr-3"></i>拼写
+                        </button>
+                        <button data-mode="quiz" class="study-mode-btn bg-purple-500 hover:bg-purple-600 text-white font-bold py-6 px-4 rounded-lg text-xl">
+                            <i class="fas fa-question-circle mr-3"></i>✨ AI 增强测验
+                        </button>
+                        <button data-mode="match" class="study-mode-btn bg-orange-500 hover:bg-orange-600 text-white font-bold py-6 px-4 rounded-lg text-xl">
+                            <i class="fas fa-gamepad mr-3"></i>匹配游戏
+                        </button>
+                    </div>
+                    <button id="back-to-main-from-study" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回</button>
+                </div>
+            `;
+            document.querySelectorAll('.study-mode-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const mode = e.currentTarget.dataset.mode;
+                    switch(mode) {
+                        case 'flashcard': renderFlashcardMode(); break;
+                        case 'spell': renderSpellMode(); break;
+                        case 'quiz': renderQuizMode(allCards); break;
+                        case 'match': renderMatchMode(); break;
+                    }
+                });
+            });
+            document.getElementById('back-to-main-from-study').addEventListener('click', backToMain);
+        }
+        
+        function backToMain() {
+            mainPage.classList.remove('hidden');
+            studyPage.classList.add('hidden');
+            statsPage.classList.add('hidden');
+            publicLibraryPage.classList.add('hidden');
+            loadUserSets(); // 刷新卡组信息
+        }
+
+        // --- 翻卡模式 ---
+        function renderFlashcardMode() {
+            currentCardIndex = 0;
+            showFlashcard();
+        }
+
+        function showFlashcard() {
+            if (currentCardIndex >= currentSetCards.length) {
+                finishStudySession();
+                return;
+            }
+            const card = currentSetCards[currentCardIndex];
+            studyPage.innerHTML = `
+                <div class="p-4 max-w-2xl mx-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-lg font-semibold">${currentCardIndex + 1} / ${currentSetCards.length}</p>
+                        <button id="back-to-modes" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回模式选择</button>
+                    </div>
+                    <div id="flashcard-container" class="relative w-full h-80 perspective-1000">
+                        <div id="flashcard" class="card w-full h-full relative">
+                            <div class="card-face absolute w-full h-full flex flex-col justify-center items-center p-6 rounded-lg shadow-lg bg-white dark:bg-gray-700 border">
+                                <p class="text-3xl text-center">${card.term}</p>
+                                ${card.imageUrl ? `<img src="${card.imageUrl}" class="max-h-32 mt-4 rounded">` : ''}
+                                <button class="tts-btn absolute top-4 right-4 text-xl text-blue-500"><i class="fas fa-volume-up"></i></button>
+                            </div>
+                            <div class="card-face card-face-back absolute w-full h-full flex justify-center items-center p-6 rounded-lg shadow-lg bg-gray-100 dark:bg-gray-600 border">
+                                <p class="text-3xl text-center">${card.definition}</p>
+                                <button class="tts-btn absolute top-4 right-4 text-xl text-blue-500"><i class="fas fa-volume-up"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-6">
+                        <button id="flip-card-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg text-lg">翻转</button>
+                    </div>
+                    <div id="srs-buttons" class="hidden mt-6 grid grid-cols-4 gap-4">
+                        <button data-rating="1" class="srs-btn srs-btn-again text-white font-bold py-3 px-4 rounded-lg">重来 (Again)</button>
+                        <button data-rating="2" class="srs-btn srs-btn-hard text-white font-bold py-3 px-4 rounded-lg">困难 (Hard)</button>
+                        <button data-rating="3" class="srs-btn srs-btn-good text-white font-bold py-3 px-4 rounded-lg">一般 (Good)</button>
+                        <button data-rating="4" class="srs-btn srs-btn-easy text-white font-bold py-3 px-4 rounded-lg">简单 (Easy)</button>
+                    </div>
+                </div>
+            `;
+            
+            const flashcard = document.getElementById('flashcard');
+            const flipBtn = document.getElementById('flip-card-btn');
+            
+            flipBtn.addEventListener('click', () => {
+                flashcard.classList.add('is-flipped');
+                flipBtn.classList.add('hidden');
+                document.getElementById('srs-buttons').classList.remove('hidden');
+            });
+            
+            document.querySelectorAll('.srs-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const rating = parseInt(e.currentTarget.dataset.rating);
+                    updateSrsData(card, rating);
+                    currentCardIndex++;
+                    showFlashcard();
+                });
+            });
+
+            document.querySelectorAll('.tts-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const textToSpeak = e.currentTarget.closest('.card-face').querySelector('p').textContent;
+                    speakText(textToSpeak);
+                });
+            });
+            
+            document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
+        }
+        
+        // --- 拼写模式 ---
+        function renderSpellMode() {
+            currentCardIndex = 0;
+            showSpellCard();
+        }
+
+        function showSpellCard() {
+            if (currentCardIndex >= currentSetCards.length) {
+                finishStudySession();
+                return;
+            }
+            const card = currentSetCards[currentCardIndex];
+            studyPage.innerHTML = `
+                <div class="p-4 max-w-2xl mx-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-lg font-semibold">${currentCardIndex + 1} / ${currentSetCards.length}</p>
+                        <button id="back-to-modes" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回模式选择</button>
+                    </div>
+                    <div class="bg-white dark:bg-gray-700 p-8 rounded-lg shadow-lg text-center">
+                        <p class="text-2xl mb-4">${card.term}</p>
+                        ${card.imageUrl ? `<img src="${card.imageUrl}" class="max-h-32 mx-auto mb-4 rounded">` : ''}
+                        <button class="tts-btn text-xl text-blue-500 mb-4"><i class="fas fa-volume-up"></i></button>
+                        <input id="spell-input" type="text" class="w-full p-3 text-xl border rounded bg-gray-100 dark:bg-gray-600 text-center" placeholder="输入答案...">
+                        <button id="check-spell-btn" class="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-lg">检查</button>
+                    </div>
+                    <div id="spell-result" class="mt-4 text-center"></div>
+                </div>
+            `;
+            
+            document.getElementById('check-spell-btn').addEventListener('click', checkSpelling);
+            document.getElementById('spell-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkSpelling();
+            });
+            document.querySelector('.tts-btn').addEventListener('click', () => speakText(card.term));
+            document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
+        }
+
+        function checkSpelling() {
+            const input = document.getElementById('spell-input');
+            const answer = input.value.trim();
+            const card = currentSetCards[currentCardIndex];
+            const resultDiv = document.getElementById('spell-result');
+            
+            if (answer.toLowerCase() === card.definition.toLowerCase()) {
+                resultDiv.innerHTML = `<p class="text-green-500 font-bold text-2xl">正确!</p>`;
+                input.style.borderColor = 'green';
+                updateSrsData(card, 3); // 正确算 "Good"
+                setTimeout(() => {
+                    currentCardIndex++;
+                    showSpellCard();
+                }, 1000);
+            } else {
+                resultDiv.innerHTML = `
+                    <p class="text-red-500 font-bold text-2xl">错误!</p>
+                    <p class="text-lg mt-2">正确答案: <span class="font-semibold">${card.definition}</span></p>
+                `;
+                input.style.borderColor = 'red';
+                updateSrsData(card, 1); // 错误算 "Again"
+                setTimeout(() => {
+                    // 重新学习这张卡片
+                    currentSetCards.push(card); 
+                    currentCardIndex++;
+                    showSpellCard();
+                }, 3000);
+            }
+            document.getElementById('check-spell-btn').disabled = true;
+        }
+        
+        // --- 测验模式 (AI 增强) ---
+        function renderQuizMode(allCards) {
+            currentCardIndex = 0;
+            showQuizQuestion(allCards);
+        }
+
+        async function showQuizQuestion(allCards) {
+            if (currentCardIndex >= currentSetCards.length) {
+                finishStudySession();
+                return;
+            }
+            
+            const card = currentSetCards[currentCardIndex];
+            
+            // 显示加载状态，同时在后台生成选项
+            studyPage.innerHTML = `
+                <div class="p-4 max-w-2xl mx-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-lg font-semibold">${currentCardIndex + 1} / ${currentSetCards.length}</p>
+                        <button id="back-to-modes" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回模式选择</button>
+                    </div>
+                    <div class="bg-white dark:bg-gray-700 p-8 rounded-lg shadow-lg">
+                        <p class="text-2xl mb-6 text-center">${card.term}</p>
+                        <div id="quiz-options" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex justify-center items-center col-span-full h-24">
+                                <div class="loader"></div> <span class="ml-4">AI 正在生成测验选项...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="quiz-result" class="mt-4 text-center"></div>
+                </div>
+            `;
+            document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
+
+            try {
+                const options = await generateQuizOptions(card, allCards);
+                
+                // 重新渲染选项部分
+                const optionsContainer = document.getElementById('quiz-options');
+                if (optionsContainer) {
+                    optionsContainer.innerHTML = options.map(opt => `<button class="quiz-option-btn p-4 border rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-600">${opt}</button>`).join('');
+                    document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card, allCards));
+                    });
+                }
+            } catch (error) {
+                 showToast(`AI 生成选项失败: ${error.message}`, true);
+                 // 失败时回退到旧版逻辑
+                 const fallbackOptions = generateFallbackQuizOptions(card, allCards);
+                 const optionsContainer = document.getElementById('quiz-options');
+                 if (optionsContainer) {
+                    optionsContainer.innerHTML = fallbackOptions.map(opt => `<button class="quiz-option-btn p-4 border rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-600">${opt}</button>`).join('');
+                    document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card, allCards));
+                    });
+                 }
+            }
+        }
+
+        async function generateQuizOptions(correctCard, allCards) {
+            const prompt = `为多项选择题生成3个看起来合理但错误的干扰选项。问题是'${correctCard.term}'，正确答案是'${correctCard.definition}'。请确保干扰项与正确答案的格式和主题相似。`;
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    distractors: {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    }
+                },
+                required: ["distractors"]
+            };
+
+            try {
+                const jsonString = await callGemini(prompt, schema);
+                const { distractors } = JSON.parse(jsonString);
+                const options = [correctCard.definition, ...distractors];
+                return shuffleArray(options);
+            } catch (e) {
+                console.error("AI 生成干扰项失败, 使用备用方案", e);
+                return generateFallbackQuizOptions(correctCard, allCards);
+            }
+        }
+        
+        function generateFallbackQuizOptions(correctCard, allCards) {
+            let options = [correctCard.definition];
+            const wrongOptions = allCards
+                .filter(c => c.id !== correctCard.id)
+                .map(c => c.definition);
+            
+            const shuffledWrong = shuffleArray(wrongOptions);
+            
+            for (let i = 0; i < Math.min(3, shuffledWrong.length); i++) {
+                options.push(shuffledWrong[i]);
+            }
+            
+            return shuffleArray(options);
+        }
+
+        function checkQuizAnswer(button, card, allCards) {
+            const answer = button.textContent;
+            const resultDiv = document.getElementById('quiz-result');
+            document.querySelectorAll('.quiz-option-btn').forEach(btn => btn.disabled = true);
+
+            if (answer === card.definition) {
+                button.classList.add('bg-green-200', 'dark:bg-green-800');
+                resultDiv.innerHTML = `<p class="text-green-500 font-bold text-2xl">正确!</p>`;
+                updateSrsData(card, 3);
+                setTimeout(() => {
+                    currentCardIndex++;
+                    showQuizQuestion(allCards);
+                }, 1000);
+            } else {
+                button.classList.add('bg-red-200', 'dark:bg-red-800');
+                // 高亮正确答案
+                document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+                    if (btn.textContent === card.definition) {
+                        btn.classList.add('bg-green-200', 'dark:bg-green-800');
+                    }
+                });
+                resultDiv.innerHTML = `
+                    <p class="text-red-500 font-bold text-2xl">错误!</p>
+                `;
+                updateSrsData(card, 1);
+                setTimeout(() => {
+                    currentSetCards.push(card);
+                    currentCardIndex++;
+                    showQuizQuestion(allCards);
+                }, 3000);
+            }
+        }
+        
+        // --- 匹配游戏模式 ---
+        function renderMatchMode() {
+            const gameSize = Math.min(6, Math.floor(currentSetCards.length / 2) * 2);
+            if (gameSize < 2) {
+                studyPage.innerHTML = `
+                    <div class="text-center p-8">
+                        <h2 class="text-2xl font-bold mb-4">无法开始匹配游戏</h2>
+                        <p>需要至少 2 张卡片才能玩这个游戏。</p>
+                        <button id="back-to-modes" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回模式选择</button>
+                    </div>
+                `;
+                document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
+                return;
+            }
+
+            const gameCards = shuffleArray(currentSetCards).slice(0, gameSize);
+            const items = [];
+            gameCards.forEach((card, index) => {
+                items.push({ id: index, content: card.term, matchId: index });
+                items.push({ id: index, content: card.definition, matchId: index });
+            });
+
+            const shuffledItems = shuffleArray(items);
+            
+            studyPage.innerHTML = `
+                <div class="p-4 max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold">匹配游戏</h2>
+                        <button id="back-to-modes" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回模式选择</button>
+                    </div>
+                    <div id="match-grid" class="grid grid-cols-3 md:grid-cols-4 gap-4">
+                        ${shuffledItems.map(item => `
+                            <div class="match-item h-24 flex justify-center items-center p-2 text-center border-2 rounded-lg cursor-pointer transition-all duration-300 bg-white dark:bg-gray-700" data-match-id="${item.matchId}">
+                                ${item.content}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            let selectedItem = null;
+            document.querySelectorAll('.match-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (item.classList.contains('matched')) return;
+
+                    if (!selectedItem) {
+                        selectedItem = item;
+                        item.classList.add('selected');
+                    } else {
+                        if (selectedItem === item) {
+                            // 取消选择
+                            selectedItem.classList.remove('selected');
+                            selectedItem = null;
+                        } else if (selectedItem.dataset.matchId === item.dataset.matchId) {
+                            // 匹配成功
+                            item.classList.add('matched');
+                            selectedItem.classList.add('matched');
+                            selectedItem = null;
+                            
+                            // 检查是否完成
+                            if (document.querySelectorAll('.match-item:not(.matched)').length === 0) {
+                                setTimeout(() => {
+                                    showToast('太棒了，全部匹配成功！');
+                                    finishStudySession();
+                                }, 500);
+                            }
+                        } else {
+                            // 匹配失败
+                            item.classList.add('selected');
+                            setTimeout(() => {
+                                item.classList.remove('selected');
+                                selectedItem.classList.remove('selected');
+                                selectedItem = null;
+                            }, 500);
+                        }
+                    }
+                });
+            });
+            document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
+        }
+
+        function finishStudySession() {
+            studyPage.innerHTML = `
+                <div class="text-center p-8">
+                    <h2 class="text-3xl font-bold mb-4">🎉 恭喜你！</h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-400">本次学习已完成。</p>
+                    <button id="back-to-main-from-finish" class="mt-8 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg text-lg">返回主页</button>
+                </div>
+            `;
+            document.getElementById('back-to-main-from-finish').addEventListener('click', backToMain);
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // ===================================================================================
+        // SRS (间隔重复) 逻辑
+        // ===================================================================================
+        async function updateSrsData(card, rating) {
+            // 简化的 FSRS/SM-2 混合算法
+            let { easeFactor, interval, repetitions } = card;
+            
+            if (rating < 3) { // 错误 (Again/Hard)
+                repetitions = 0;
+                interval = 1; // 1天后复习
+            } else { // 正确 (Good/Easy)
+                repetitions += 1;
+                if (repetitions === 1) {
+                    interval = 1;
+                } else if (repetitions === 2) {
+                    interval = 6;
+                } else {
+                    interval = Math.round(interval * easeFactor);
+                }
+            }
+            
+            // 更新 ease factor
+            easeFactor = easeFactor + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02));
+            if (easeFactor < 1.3) easeFactor = 1.3;
+
+            const nextReview = new Date();
+            nextReview.setDate(nextReview.getDate() + interval);
+            
+            const updatedData = {
+                easeFactor,
+                interval,
+                repetitions,
+                nextReview
+            };
+            
+            // 记录学习历史
+            const historyRef = collection(db, `users/${currentUser.uid}/history`);
+            await addDoc(historyRef, {
+                cardId: card.id,
+                setId: currentSetId,
+                rating: rating,
+                reviewedAt: serverTimestamp()
+            });
+
+            // 更新 Firestore 中的卡片
+            const cardRef = doc(db, `sets/${currentSetId}/cards`, card.id);
+            await updateDoc(cardRef, updatedData);
+        }
+
+        // ===================================================================================
+        // 统计页面逻辑
+        // ===================================================================================
+        async function showStatsPage(setId) {
+            mainPage.classList.add('hidden');
+            statsPage.classList.remove('hidden');
+            showLoader();
+            try {
+                // 1. 获取 SRS 状态分布
+                const cardsSnapshot = await getDocs(collection(db, `sets/${setId}/cards`));
+                const srsStatus = { '新卡片': 0, '学习中': 0, '巩固中': 0, '已掌握': 0 };
+                cardsSnapshot.forEach(doc => {
+                    const card = doc.data();
+                    if (card.repetitions === 0) srsStatus['新卡片']++;
+                    else if (card.interval < 7) srsStatus['学习中']++;
+                    else if (card.interval < 30) srsStatus['巩固中']++;
+                    else srsStatus['已掌握']++;
+                });
+                renderSrsStatusChart(srsStatus);
+
+                // 2. 获取每周复习活动
+                const historyRef = collection(db, `users/${currentUser.uid}/history`);
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                const q = query(historyRef, where("setId", "==", setId), where("reviewedAt", ">=", sevenDaysAgo));
+                const historySnapshot = await getDocs(q);
+                
+                const reviewActivity = {};
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const key = d.toISOString().split('T')[0];
+                    reviewActivity[key] = 0;
+                }
+                
+                historySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.reviewedAt) {
+                         const dateKey = data.reviewedAt.toDate().toISOString().split('T')[0];
+                         if (reviewActivity.hasOwnProperty(dateKey)) {
+                             reviewActivity[dateKey]++;
+                         }
+                    }
+                });
+                renderReviewActivityChart(reviewActivity);
+
+            } catch (error) {
+                console.error("加载统计数据失败:", error);
+                showToast('加载统计数据失败', true);
+            } finally {
+                hideLoader();
+            }
+            
+            document.getElementById('back-to-main-from-stats').addEventListener('click', backToMain);
+        }
+
+        function renderSrsStatusChart(data) {
+            const ctx = document.getElementById('srs-status-chart').getContext('2d');
+            if (srsStatusChart) srsStatusChart.destroy();
+            srsStatusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{
+                        label: 'SRS 状态',
+                        data: Object.values(data),
+                        backgroundColor: ['#42A5F5', '#FFA726', '#66BB6A', '#AB47BC'],
+                    }]
+                }
+            });
+        }
+        
+        function renderReviewActivityChart(data) {
+            const ctx = document.getElementById('review-activity-chart').getContext('2d');
+            const labels = Object.keys(data).sort();
+            const values = labels.map(label => data[label]);
+
+            if (reviewActivityChart) reviewActivityChart.destroy();
+            reviewActivityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '每日复习次数',
+                        data: values,
+                        backgroundColor: 'rgba(74, 144, 226, 0.6)',
+                        borderColor: 'rgba(74, 144, 226, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
+        }
+
+        // ===================================================================================
+        // PWA, 通知, TTS 逻辑
+        // ===================================================================================
+        
+        // 注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker 注册成功:', reg))
+                    .catch(err => console.log('Service Worker 注册失败:', err));
+            });
+        }
+        
+        // 请求通知权限
+        function initNotifications() {
+            if ('Notification' in window && Notification.permission !== 'granted') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showToast('通知已启用！');
+                        scheduleDailyReminder();
+                    }
+                });
+            } else if (Notification.permission === 'granted') {
+                scheduleDailyReminder();
+            }
+        }
+
+        // 安排每日学习提醒
+        async function scheduleDailyReminder() {
+            if (!currentUser || !('serviceWorker' in navigator) || !navigator.serviceWorker.ready) return;
+
+            const registration = await navigator.serviceWorker.ready;
+            const existingNotifications = await registration.getNotifications({ tag: 'daily-reminder' });
+            if (existingNotifications.length > 0) return; // 已有提醒
+
+            const now = new Date();
+            let reminderTime = new Date();
+            reminderTime.setHours(20, 0, 0, 0); // 每天晚上 8 点
+
+            if (now > reminderTime) {
+                reminderTime.setDate(reminderTime.getDate() + 1);
+            }
+            
+            const timeDiff = reminderTime.getTime() - now.getTime();
+            
+            setTimeout(() => {
+                 registration.showNotification('今天的学习时间到了！', {
+                    body: '打开 IntelliFlash，巩固你的记忆吧！',
+                    icon: 'https://placehold.co/192x192/4A90E2/FFFFFF?text=IF',
+                    tag: 'daily-reminder'
+                });
+                // 安排下一次
+                setInterval(() => {
+                    registration.showNotification('今天的学习时间到了！', {
+                        body: '打开 IntelliFlash，巩固你的记忆吧！',
+                        icon: 'https://placehold.co/192x192/4A90E2/FFFFFF?text=IF',
+                        tag: 'daily-reminder'
+                    });
+                }, 24 * 60 * 60 * 1000); // 每24小时
+            }, timeDiff);
+        }
+        
+        // 文字转语音 (TTS)
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                // 尝试自动选择语言
+                if (/[\u4e00-\u9fa5]/.test(text)) {
+                    utterance.lang = 'zh-CN';
+                } else {
+                    utterance.lang = 'en-US';
+                }
+                window.speechSynthesis.speak(utterance);
+            } else {
+                showToast('你的浏览器不支持语音功能。', true);
+            }
+        }
+
+    </script>
+    
+    <!-- Service Worker 和 Manifest 的占位符 -->
+    <!-- 你需要创建 manifest.json 和 sw.js 文件 -->
+    
+</body>
+</html>

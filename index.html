@@ -238,7 +238,8 @@
 
 
                 <h3 class="font-semibold mb-2">卡片</h3>
-                <div id="cards-container" class="flex-grow overflow-y-auto pr-2">
+                <!-- BUG FIX: Added min-h-0 to make flex-grow and overflow-y-auto work correctly -->
+                <div id="cards-container" class="flex-grow overflow-y-auto pr-2 min-h-0">
                     <!-- 卡片输入框将在这里动态生成 -->
                 </div>
 
@@ -294,15 +295,16 @@
         // 🔥 配置 (重要!)
         // ===================================================================================
         // 请在这里填入你自己的 Firebase 和 Gemini 项目配置。
-        const firebaseConfig = {
-          apiKey: "AIzaSyDyYXFukIb4R16o8mx7cl9ZUzsCO6Y6fro",
-          authDomain: "intelliflash-6574c.firebaseapp.com",
-          projectId: "intelliflash-6574c",
-          storageBucket: "intelliflash-6574c.firebasestorage.app",
-          messagingSenderId: "730575240954",
-          appId: "1:730575240954:web:d2771d613441f4731cd343",
-          measurementId: "G-XFP1RE80XN"
-        };
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDyYXFukIb4R16o8mx7cl9ZUzsCO6Y6fro", 
+            authDomain: "intelliflash-6574c.firebaseapp.com", 
+            projectId: "intelliflash-6574c", 
+            storageBucket: "intelliflash-6574c.firebasestorage.app", 
+            messagingSenderId: "730575240954", 
+            appId: "1:730575240954:web:d2771d613441f4731cd343", 
+            measurementId: "G-XFP1RE80XN" 
+        }; 
+        
         const GEMINI_API_KEY = "AIzaSyB4kejtqBehPI0Ri1e_huC35-7Gkw7dszk"; // 留空即可，Canvas 会自动提供
         
         // ===================================================================================
@@ -334,7 +336,6 @@
         // ===================================================================================
         const showLoader = (text = '') => {
             globalLoader.classList.remove('hidden');
-            // 可以添加文本提示，例如 "AI 正在生成..."
         };
         const hideLoader = () => globalLoader.classList.add('hidden');
 
@@ -366,7 +367,6 @@
             }
         });
 
-        // 初始化主题
         if (localStorage.getItem('theme') === 'dark' || 
            (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -403,7 +403,6 @@
             }
         });
 
-        // Google 登录
         document.getElementById('google-login-btn').addEventListener('click', async () => {
             const provider = new GoogleAuthProvider();
             try {
@@ -415,7 +414,6 @@
             }
         });
 
-        // 邮箱/密码登录和注册
         const emailForm = document.getElementById('email-password-form');
         emailForm.addEventListener('submit', e => e.preventDefault());
 
@@ -443,7 +441,6 @@
             }
         });
 
-        // 登出
         document.getElementById('logout-btn').addEventListener('click', async () => {
             try {
                 await signOut(auth);
@@ -496,7 +493,7 @@
                 return text;
             } catch (error) {
                 console.error("调用 Gemini API 时出错:", error);
-                throw error; // Re-throw the error to be caught by the caller
+                throw error;
             }
         }
 
@@ -526,7 +523,7 @@
             if (set && set.cards) {
                 set.cards.forEach(card => addCardInputs(card));
             } else {
-                addCardInputs(); // 添加一组空的
+                addCardInputs();
             }
             setModal.classList.remove('hidden');
         }
@@ -565,7 +562,6 @@
                 const generatedData = JSON.parse(jsonString);
 
                 if (generatedData.cards && generatedData.cards.length > 0) {
-                    // 清空现有空卡片
                     if (cardsContainer.children.length === 1 && 
                         !cardsContainer.querySelector('.term-input').value && 
                         !cardsContainer.querySelector('.definition-input').value) {
@@ -639,37 +635,38 @@
 
             try {
                 let savedSetId = setId;
-                if (setId) { // 更新
+                if (setId) {
                     const setRef = doc(db, 'sets', setId);
                     await updateDoc(setRef, setData);
-                } else { // 创建
+                } else {
                     const docRef = await addDoc(collection(db, 'sets'), { ...setData, createdAt: serverTimestamp() });
                     savedSetId = docRef.id;
                 }
 
-                // 处理卡片 (上传图片 + 保存卡片数据)
                 const cardInputGroups = cardsContainer.querySelectorAll('.card-input-group');
                 const batch = writeBatch(db);
                 
                 for (const group of cardInputGroups) {
                     const term = group.querySelector('.term-input').value;
                     const definition = group.querySelector('.definition-input').value;
-                    if (!term || !definition) continue; // 跳过空卡片
+                    if (!term || !definition) continue;
                     
                     const cardId = group.dataset.cardId;
-                    const cardRef = doc(collection(db, `sets/${savedSetId}/cards`), cardId.startsWith('new_') ? undefined : cardId);
+                    const isNewCard = cardId.startsWith('new_');
+                    
+                    const cardRef = isNewCard
+                        ? doc(collection(db, `sets/${savedSetId}/cards`))
+                        : doc(db, `sets/${savedSetId}/cards`, cardId);
                     
                     const cardData = {
                         term,
                         definition,
-                        // SRS 默认值
                         easeFactor: 2.5,
                         interval: 0,
                         repetitions: 0,
                         nextReview: new Date()
                     };
 
-                    // 处理图片上传
                     const imageInput = group.querySelector('.image-upload-input');
                     const imageFile = imageInput.files[0];
                     if (imageFile) {
@@ -700,7 +697,6 @@
             if (!confirm('确定要删除这个卡组吗？所有相关的卡片和学习进度都将被永久删除。')) return;
             showLoader();
             try {
-                // TODO: 删除卡片子集合和图片
                 await deleteDoc(doc(db, 'sets', setId));
                 showToast('卡组已删除。');
                 loadUserSets();
@@ -822,7 +818,6 @@
                 allPublicSets = [];
                 for (const docSnap of querySnapshot.docs) {
                     const set = { id: docSnap.id, ...docSnap.data() };
-                    // 不加载自己的公开卡组
                     if (set.ownerId === currentUser.uid) continue;
                     
                     const cardsSnapshot = await getDocs(collection(db, `sets/${set.id}/cards`));
@@ -873,11 +868,10 @@
                 }
                 const originalSetData = originalSetSnap.data();
 
-                // 1. 创建新的卡组
                 const newSetData = {
                     title: originalSetData.title,
                     description: originalSetData.description,
-                    isPublic: false, // 克隆后默认为私有
+                    isPublic: false,
                     ownerId: currentUser.uid,
                     ownerName: currentUser.displayName || currentUser.email,
                     createdAt: serverTimestamp(),
@@ -886,7 +880,6 @@
                 };
                 const newSetRef = await addDoc(collection(db, 'sets'), newSetData);
 
-                // 2. 复制所有卡片
                 const originalCardsRef = collection(db, `sets/${setId}/cards`);
                 const originalCardsSnap = await getDocs(originalCardsRef);
                 const batch = writeBatch(db);
@@ -898,7 +891,7 @@
 
                 await batch.commit();
                 showToast('卡组克隆成功！');
-                loadUserSets(); // 刷新我的卡组列表
+                loadUserSets();
             } catch (error) {
                 console.error("克隆卡组失败:", error);
                 showToast(`克隆失败: ${error.message}`, true);
@@ -913,22 +906,22 @@
         let currentSetCards = [];
         let currentCardIndex = 0;
         let currentSetId = null;
+        let allCardsInCurrentSet = [];
 
         async function startStudy(setId) {
             showLoader();
             try {
                 currentSetId = setId;
                 const cardsSnapshot = await getDocs(collection(db, `sets/${setId}/cards`));
-                const allCardsInSet = cardsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allCardsInCurrentSet = cardsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
-                if (allCardsInSet.length === 0) {
+                if (allCardsInCurrentSet.length === 0) {
                     showToast('这个卡组里没有卡片！', true);
                     return;
                 }
                 
-                // 过滤出需要复习的卡片
                 const now = new Date();
-                const dueCards = allCardsInSet.filter(card => {
+                const dueCards = allCardsInCurrentSet.filter(card => {
                     const nextReviewDate = card.nextReview.toDate ? card.nextReview.toDate() : new Date(card.nextReview);
                     return nextReviewDate <= now;
                 });
@@ -938,12 +931,12 @@
                      return;
                 }
                 
-                currentSetCards = shuffleArray(dueCards); // 只学习到期的
+                currentSetCards = shuffleArray(dueCards);
                 currentCardIndex = 0;
 
                 mainPage.classList.add('hidden');
                 studyPage.classList.remove('hidden');
-                showStudyModeSelection(allCardsInSet); // 传递所有卡片用于生成干扰项
+                showStudyModeSelection();
 
             } catch (error) {
                 console.error("开始学习失败:", error);
@@ -953,7 +946,7 @@
             }
         }
 
-        function showStudyModeSelection(allCards) {
+        function showStudyModeSelection() {
             studyPage.innerHTML = `
                 <div class="text-center p-8">
                     <h2 class="text-3xl font-bold mb-2">选择学习模式</h2>
@@ -981,7 +974,7 @@
                     switch(mode) {
                         case 'flashcard': renderFlashcardMode(); break;
                         case 'spell': renderSpellMode(); break;
-                        case 'quiz': renderQuizMode(allCards); break;
+                        case 'quiz': renderQuizMode(); break;
                         case 'match': renderMatchMode(); break;
                     }
                 });
@@ -994,10 +987,9 @@
             studyPage.classList.add('hidden');
             statsPage.classList.add('hidden');
             publicLibraryPage.classList.add('hidden');
-            loadUserSets(); // 刷新卡组信息
+            loadUserSets();
         }
 
-        // --- 翻卡模式 ---
         function renderFlashcardMode() {
             currentCardIndex = 0;
             showFlashcard();
@@ -1069,7 +1061,6 @@
             document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
         }
         
-        // --- 拼写模式 ---
         function renderSpellMode() {
             currentCardIndex = 0;
             showSpellCard();
@@ -1115,7 +1106,7 @@
             if (answer.toLowerCase() === card.definition.toLowerCase()) {
                 resultDiv.innerHTML = `<p class="text-green-500 font-bold text-2xl">正确!</p>`;
                 input.style.borderColor = 'green';
-                updateSrsData(card, 3); // 正确算 "Good"
+                updateSrsData(card, 3);
                 setTimeout(() => {
                     currentCardIndex++;
                     showSpellCard();
@@ -1126,9 +1117,8 @@
                     <p class="text-lg mt-2">正确答案: <span class="font-semibold">${card.definition}</span></p>
                 `;
                 input.style.borderColor = 'red';
-                updateSrsData(card, 1); // 错误算 "Again"
+                updateSrsData(card, 1);
                 setTimeout(() => {
-                    // 重新学习这张卡片
                     currentSetCards.push(card); 
                     currentCardIndex++;
                     showSpellCard();
@@ -1137,13 +1127,12 @@
             document.getElementById('check-spell-btn').disabled = true;
         }
         
-        // --- 测验模式 (AI 增强) ---
-        function renderQuizMode(allCards) {
+        function renderQuizMode() {
             currentCardIndex = 0;
-            showQuizQuestion(allCards);
+            showQuizQuestion();
         }
 
-        async function showQuizQuestion(allCards) {
+        async function showQuizQuestion() {
             if (currentCardIndex >= currentSetCards.length) {
                 finishStudySession();
                 return;
@@ -1151,7 +1140,6 @@
             
             const card = currentSetCards[currentCardIndex];
             
-            // 显示加载状态，同时在后台生成选项
             studyPage.innerHTML = `
                 <div class="p-4 max-w-2xl mx-auto">
                     <div class="flex justify-between items-center mb-4">
@@ -1172,31 +1160,29 @@
             document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
 
             try {
-                const options = await generateQuizOptions(card, allCards);
+                const options = await generateQuizOptions(card);
                 
-                // 重新渲染选项部分
                 const optionsContainer = document.getElementById('quiz-options');
                 if (optionsContainer) {
                     optionsContainer.innerHTML = options.map(opt => `<button class="quiz-option-btn p-4 border rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-600">${opt}</button>`).join('');
                     document.querySelectorAll('.quiz-option-btn').forEach(btn => {
-                        btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card, allCards));
+                        btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card));
                     });
                 }
             } catch (error) {
                  showToast(`AI 生成选项失败: ${error.message}`, true);
-                 // 失败时回退到旧版逻辑
-                 const fallbackOptions = generateFallbackQuizOptions(card, allCards);
+                 const fallbackOptions = generateFallbackQuizOptions(card);
                  const optionsContainer = document.getElementById('quiz-options');
                  if (optionsContainer) {
                     optionsContainer.innerHTML = fallbackOptions.map(opt => `<button class="quiz-option-btn p-4 border rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-600">${opt}</button>`).join('');
                     document.querySelectorAll('.quiz-option-btn').forEach(btn => {
-                        btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card, allCards));
+                        btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card));
                     });
                  }
             }
         }
 
-        async function generateQuizOptions(correctCard, allCards) {
+        async function generateQuizOptions(correctCard) {
             const prompt = `为多项选择题生成3个看起来合理但错误的干扰选项。问题是'${correctCard.term}'，正确答案是'${correctCard.definition}'。请确保干扰项与正确答案的格式和主题相似。`;
             const schema = {
                 type: "OBJECT",
@@ -1216,13 +1202,13 @@
                 return shuffleArray(options);
             } catch (e) {
                 console.error("AI 生成干扰项失败, 使用备用方案", e);
-                return generateFallbackQuizOptions(correctCard, allCards);
+                return generateFallbackQuizOptions(correctCard);
             }
         }
         
-        function generateFallbackQuizOptions(correctCard, allCards) {
+        function generateFallbackQuizOptions(correctCard) {
             let options = [correctCard.definition];
-            const wrongOptions = allCards
+            const wrongOptions = allCardsInCurrentSet
                 .filter(c => c.id !== correctCard.id)
                 .map(c => c.definition);
             
@@ -1235,7 +1221,7 @@
             return shuffleArray(options);
         }
 
-        function checkQuizAnswer(button, card, allCards) {
+        function checkQuizAnswer(button, card) {
             const answer = button.textContent;
             const resultDiv = document.getElementById('quiz-result');
             document.querySelectorAll('.quiz-option-btn').forEach(btn => btn.disabled = true);
@@ -1246,29 +1232,25 @@
                 updateSrsData(card, 3);
                 setTimeout(() => {
                     currentCardIndex++;
-                    showQuizQuestion(allCards);
+                    showQuizQuestion();
                 }, 1000);
             } else {
                 button.classList.add('bg-red-200', 'dark:bg-red-800');
-                // 高亮正确答案
                 document.querySelectorAll('.quiz-option-btn').forEach(btn => {
                     if (btn.textContent === card.definition) {
                         btn.classList.add('bg-green-200', 'dark:bg-green-800');
                     }
                 });
-                resultDiv.innerHTML = `
-                    <p class="text-red-500 font-bold text-2xl">错误!</p>
-                `;
+                resultDiv.innerHTML = `<p class="text-red-500 font-bold text-2xl">错误!</p>`;
                 updateSrsData(card, 1);
                 setTimeout(() => {
                     currentSetCards.push(card);
                     currentCardIndex++;
-                    showQuizQuestion(allCards);
+                    showQuizQuestion();
                 }, 3000);
             }
         }
         
-        // --- 匹配游戏模式 ---
         function renderMatchMode() {
             const gameSize = Math.min(6, Math.floor(currentSetCards.length / 2) * 2);
             if (gameSize < 2) {
@@ -1318,16 +1300,13 @@
                         item.classList.add('selected');
                     } else {
                         if (selectedItem === item) {
-                            // 取消选择
                             selectedItem.classList.remove('selected');
                             selectedItem = null;
                         } else if (selectedItem.dataset.matchId === item.dataset.matchId) {
-                            // 匹配成功
                             item.classList.add('matched');
                             selectedItem.classList.add('matched');
                             selectedItem = null;
                             
-                            // 检查是否完成
                             if (document.querySelectorAll('.match-item:not(.matched)').length === 0) {
                                 setTimeout(() => {
                                     showToast('太棒了，全部匹配成功！');
@@ -1335,7 +1314,6 @@
                                 }, 500);
                             }
                         } else {
-                            // 匹配失败
                             item.classList.add('selected');
                             setTimeout(() => {
                                 item.classList.remove('selected');
@@ -1372,13 +1350,19 @@
         // SRS (间隔重复) 逻辑
         // ===================================================================================
         async function updateSrsData(card, rating) {
-            // 简化的 FSRS/SM-2 混合算法
+            // BUG FIX: Add guard clause to prevent empty path error.
+            if (!currentSetId || !card || !card.id) {
+                console.error("无法更新SRS数据：缺少卡组ID或卡片ID。", { currentSetId, cardId: card?.id });
+                showToast("发生内部错误，无法保存学习进度。", true);
+                return; 
+            }
+
             let { easeFactor, interval, repetitions } = card;
             
-            if (rating < 3) { // 错误 (Again/Hard)
+            if (rating < 3) {
                 repetitions = 0;
-                interval = 1; // 1天后复习
-            } else { // 正确 (Good/Easy)
+                interval = 1;
+            } else {
                 repetitions += 1;
                 if (repetitions === 1) {
                     interval = 1;
@@ -1389,7 +1373,6 @@
                 }
             }
             
-            // 更新 ease factor
             easeFactor = easeFactor + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02));
             if (easeFactor < 1.3) easeFactor = 1.3;
 
@@ -1403,7 +1386,6 @@
                 nextReview
             };
             
-            // 记录学习历史
             const historyRef = collection(db, `users/${currentUser.uid}/history`);
             await addDoc(historyRef, {
                 cardId: card.id,
@@ -1412,7 +1394,6 @@
                 reviewedAt: serverTimestamp()
             });
 
-            // 更新 Firestore 中的卡片
             const cardRef = doc(db, `sets/${currentSetId}/cards`, card.id);
             await updateDoc(cardRef, updatedData);
         }
@@ -1425,7 +1406,6 @@
             statsPage.classList.remove('hidden');
             showLoader();
             try {
-                // 1. 获取 SRS 状态分布
                 const cardsSnapshot = await getDocs(collection(db, `sets/${setId}/cards`));
                 const srsStatus = { '新卡片': 0, '学习中': 0, '巩固中': 0, '已掌握': 0 };
                 cardsSnapshot.forEach(doc => {
@@ -1437,7 +1417,6 @@
                 });
                 renderSrsStatusChart(srsStatus);
 
-                // 2. 获取每周复习活动
                 const historyRef = collection(db, `users/${currentUser.uid}/history`);
                 const sevenDaysAgo = new Date();
                 sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -1518,8 +1497,6 @@
         // ===================================================================================
         // PWA, 通知, TTS 逻辑
         // ===================================================================================
-        
-        // 注册 Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
@@ -1528,7 +1505,6 @@
             });
         }
         
-        // 请求通知权限
         function initNotifications() {
             if ('Notification' in window && Notification.permission !== 'granted') {
                 Notification.requestPermission().then(permission => {
@@ -1542,17 +1518,16 @@
             }
         }
 
-        // 安排每日学习提醒
         async function scheduleDailyReminder() {
             if (!currentUser || !('serviceWorker' in navigator) || !navigator.serviceWorker.ready) return;
 
             const registration = await navigator.serviceWorker.ready;
             const existingNotifications = await registration.getNotifications({ tag: 'daily-reminder' });
-            if (existingNotifications.length > 0) return; // 已有提醒
+            if (existingNotifications.length > 0) return;
 
             const now = new Date();
             let reminderTime = new Date();
-            reminderTime.setHours(20, 0, 0, 0); // 每天晚上 8 点
+            reminderTime.setHours(20, 0, 0, 0);
 
             if (now > reminderTime) {
                 reminderTime.setDate(reminderTime.getDate() + 1);
@@ -1566,22 +1541,19 @@
                     icon: 'https://placehold.co/192x192/4A90E2/FFFFFF?text=IF',
                     tag: 'daily-reminder'
                 });
-                // 安排下一次
                 setInterval(() => {
                     registration.showNotification('今天的学习时间到了！', {
                         body: '打开 IntelliFlash，巩固你的记忆吧！',
                         icon: 'https://placehold.co/192x192/4A90E2/FFFFFF?text=IF',
                         tag: 'daily-reminder'
                     });
-                }, 24 * 60 * 60 * 1000); // 每24小时
+                }, 24 * 60 * 60 * 1000);
             }, timeDiff);
         }
         
-        // 文字转语音 (TTS)
         function speakText(text) {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
-                // 尝试自动选择语言
                 if (/[\u4e00-\u9fa5]/.test(text)) {
                     utterance.lang = 'zh-CN';
                 } else {
@@ -1594,9 +1566,6 @@
         }
 
     </script>
-    
-    <!-- Service Worker 和 Manifest 的占位符 -->
-    <!-- 你需要创建 manifest.json 和 sw.js 文件 -->
     
 </body>
 </html>

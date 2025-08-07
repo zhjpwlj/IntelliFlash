@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,35 +7,13 @@
     <meta name="description" content="一个集成了间隔重复、多种学习模式和社区共享的强大闪卡应用。由 Gemini AI 驱动。">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4A90E2">
-    <link rel="apple-touch-icon" href="https://zhjpwlj.github.io/IntelliFlash/192.png">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/4A90E2/FFFFFF?text=IF">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
     <style>
-        /* 自定义样式和动画 */
-        :root {
-            --primary-color: #4A90E2;
-            --primary-color-dark: #357ABD;
-            --background-light: #f7fafc;
-            --background-dark: #1a202c;
-            --text-light: #2d3748;
-            --text-dark: #e2e8f0;
-            --card-bg-light: #ffffff;
-            --card-bg-dark: #2d3748;
-        }
-        .dark {
-            --background-light: var(--background-dark);
-            --text-light: var(--text-dark);
-            --card-bg-light: var(--card-bg-dark);
-        }
-        body {
-            background-color: var(--background-light);
-            color: var(--text-light);
-            transition: background-color 0.3s, color 0.3s;
-        }
+        /* 仅保留无冲突的动画和基础样式 */
         .card {
-            background-color: var(--card-bg-light);
-            transition: background-color 0.3s;
             transform-style: preserve-3d;
             transition: transform 0.6s;
         }
@@ -54,9 +32,8 @@
         .srs-btn-good { background-color: #66BB6A; }
         .srs-btn-easy { background-color: #29B6F6; }
 
-        /* 匹配游戏样式 */
         .match-item.selected {
-            border-color: var(--primary-color);
+            border-color: #4A90E2;
             transform: scale(1.05);
             box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
         }
@@ -73,10 +50,9 @@
              color: #66BB6A;
         }
 
-        /* 加载动画 */
         .loader {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
+            border-top: 4px solid #4A90E2;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -87,7 +63,6 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* 模态框动画 */
         .modal-content {
             animation: slide-up 0.3s ease-out;
         }
@@ -97,7 +72,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors duration-300">
 
     <!-- 全局加载指示器 -->
     <div id="global-loader" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 hidden">
@@ -118,7 +93,7 @@
                 <i class="fas fa-brain mr-2"></i>IntelliFlash
             </h1>
             <div>
-                <button id="theme-toggle" class="mr-4 text-xl"><i class="fas fa-sun"></i></button>
+                <button id="theme-toggle" class="mr-4 text-xl"><i class="fas fa-moon"></i></button>
                 <div id="user-info" class="hidden inline-block">
                     <span id="user-email" class="mr-4"></span>
                     <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">登出</button>
@@ -139,10 +114,8 @@
                     <i class="fas fa-globe mr-2"></i>公开卡组库
                 </button>
             </div>
-
-            <!-- 我的卡组 -->
             <section id="my-sets-section">
-                <h2 class="text-2xl font-semibold mb-4 border-b pb-2">我的卡组</h2>
+                <h2 class="text-2xl font-semibold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">我的卡组</h2>
                 <div id="sets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- 卡组卡片将在这里动态生成 -->
                 </div>
@@ -158,17 +131,13 @@
                 </button>
             </div>
             <div class="mb-4">
-                <input type="text" id="public-search-input" placeholder="搜索公开卡组..." class="w-full p-3 rounded-lg border bg-white dark:bg-gray-700">
+                <input type="text" id="public-search-input" placeholder="搜索公开卡组..." class="w-full p-3 rounded-lg border bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
             </div>
-            <div id="public-sets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- 公开卡组将在这里动态生成 -->
-            </div>
+            <div id="public-sets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </main>
 
         <!-- 学习页面 -->
-        <div id="study-page" class="hidden">
-            <!-- 学习页面内容将在这里动态生成 -->
-        </div>
+        <div id="study-page" class="hidden"></div>
         
         <!-- 统计页面 -->
         <div id="stats-page" class="hidden p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
@@ -179,79 +148,67 @@
                 </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h3 class="text-xl font-semibold mb-2">记忆曲线 (SRS 状态分布)</h3>
-                    <canvas id="srs-status-chart"></canvas>
-                </div>
-                <div>
-                    <h3 class="text-xl font-semibold mb-2">每周复习次数</h3>
-                    <canvas id="review-activity-chart"></canvas>
-                </div>
+                <div class="relative h-64"><canvas id="srs-status-chart"></canvas></div>
+                <div class="relative h-64"><canvas id="review-activity-chart"></canvas></div>
             </div>
         </div>
-
     </div>
 
     <!-- 登录/注册模态框 -->
-    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
-        <div class="modal-content bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md">
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden z-40">
+        <div class="modal-content bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md relative">
+            <button id="close-auth-modal" class="absolute top-4 right-4 text-2xl text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">&times;</button>
             <h2 id="auth-modal-title" class="text-2xl font-bold mb-6 text-center">登录</h2>
-            <!-- 邮箱/密码表单 -->
-            <form id="email-password-form">
-                <input type="email" id="email-input" placeholder="邮箱" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700" required>
-                <input type="password" id="password-input" placeholder="密码 (至少6位)" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700" required>
-                <button type="submit" id="email-login-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded mb-2">登录</button>
+            <form id="email-password-form" onsubmit="return false;">
+                <input type="email" id="email-input" placeholder="邮箱" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600" required>
+                <input type="password" id="password-input" placeholder="密码 (至少6位)" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600" required>
+                <button type="button" id="email-login-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded mb-2">登录</button>
                 <button type="button" id="email-register-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded">注册</button>
             </form>
             <div class="my-4 text-center text-gray-500">或</div>
-            <!-- Google 登录 -->
-            <button id="google-login-btn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded flex items-center justify-center shadow-sm hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+            <button id="google-login-btn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded flex items-center justify-center shadow-sm hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600">
                 <img src="https://www.google.com/favicon.ico" alt="Google" class="w-6 h-6 mr-3">
                 使用 Google 登录
             </button>
-            <button id="close-auth-modal" class="absolute top-4 right-4 text-2xl text-gray-600 dark:text-gray-400">&times;</button>
         </div>
     </div>
 
     <!-- 创建/编辑卡组模态框 -->
-    <div id="set-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+    <div id="set-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden z-40">
         <div class="modal-content bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-4xl h-5/6 flex flex-col">
             <h2 id="set-modal-title" class="text-2xl font-bold mb-4">创建新卡组</h2>
-            <form id="set-form" class="flex flex-col flex-grow">
-                <input type="hidden" id="set-id-input">
-                <input type="text" id="set-title-input" placeholder="卡组标题，例如“高频英语词汇”" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700" required>
-                <textarea id="set-description-input" placeholder="卡组描述" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700" rows="2"></textarea>
-                
-                <div class="flex items-center mb-4">
-                    <label for="set-public-checkbox" class="mr-2">公开分享此卡组:</label>
-                    <input type="checkbox" id="set-public-checkbox" class="h-5 w-5">
-                </div>
-                
-                <!-- AI 生成功能 -->
-                <div class="bg-blue-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
-                    <h3 class="font-semibold mb-2 text-lg text-blue-800 dark:text-blue-300">✨ AI 智能生成卡片</h3>
-                    <div class="flex gap-2">
-                        <input type="text" id="ai-topic-input" placeholder="输入主题，如“太阳系行星”" class="w-full p-2 border rounded bg-white dark:bg-gray-600">
-                        <button type="button" id="ai-generate-cards-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded whitespace-nowrap">生成卡片</button>
+            <form id="set-form" class="flex flex-col flex-grow min-h-0">
+                <!-- Static Top Part -->
+                <div>
+                    <input type="hidden" id="set-id-input">
+                    <input type="text" id="set-title-input" placeholder="卡组标题，例如“高频英语词汇”" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600" required>
+                    <textarea id="set-description-input" placeholder="卡组描述" class="w-full p-3 mb-4 border rounded bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600" rows="2"></textarea>
+                    <div class="flex items-center mb-4">
+                        <label for="set-public-checkbox" class="mr-2">公开分享此卡组:</label>
+                        <input type="checkbox" id="set-public-checkbox" class="h-5 w-5">
                     </div>
+                    <div class="bg-blue-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
+                        <h3 class="font-semibold mb-2 text-lg text-blue-800 dark:text-blue-300">✨ AI 智能生成卡片</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="ai-topic-input" placeholder="输入主题，如“太阳系行星”" class="w-full p-2 border rounded bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500">
+                            <button type="button" id="ai-generate-cards-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded whitespace-nowrap">生成卡片</button>
+                        </div>
+                    </div>
+                    <h3 class="font-semibold mb-2">卡片</h3>
                 </div>
-
-
-                <h3 class="font-semibold mb-2">卡片</h3>
-                <!-- BUG FIX: Added min-h-0 to make flex-grow and overflow-y-auto work correctly -->
+                <!-- Scrollable Middle Part -->
                 <div id="cards-container" class="flex-grow overflow-y-auto pr-2 min-h-0">
                     <!-- 卡片输入框将在这里动态生成 -->
                 </div>
-
-                <div class="mt-4">
+                <!-- Static Bottom Part -->
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button type="button" id="add-card-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
                         <i class="fas fa-plus mr-2"></i>添加卡片
                     </button>
-                </div>
-
-                <div class="mt-6 flex justify-end">
-                    <button type="button" id="cancel-set-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mr-4">取消</button>
-                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">保存卡组</button>
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" id="cancel-set-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mr-4">取消</button>
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">保存卡组</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -259,52 +216,31 @@
     
     <!-- Firebase SDKs -->
     <script type="module">
-        // 导入 Firebase 模块。这些 URL 是 Firebase 官方提供的 CDN。
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
-            getAuth, 
-            onAuthStateChanged, 
-            GoogleAuthProvider, 
-            signInWithPopup, 
-            createUserWithEmailAndPassword, 
-            signInWithEmailAndPassword, 
-            signOut 
+            getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, 
+            createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            getDocs, 
-            doc, 
-            updateDoc, 
-            deleteDoc, 
-            query, 
-            where, 
-            writeBatch,
-            getDoc,
-            serverTimestamp
+            getFirestore, collection, addDoc, getDocs, doc, updateDoc, 
+            deleteDoc, query, where, writeBatch, getDoc, serverTimestamp
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { 
-            getStorage, 
-            ref, 
-            uploadBytes, 
-            getDownloadURL 
+            getStorage, ref, uploadBytes, getDownloadURL 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         // ===================================================================================
         // 🔥 配置 (重要!)
         // ===================================================================================
-        // 请在这里填入你自己的 Firebase 和 Gemini 项目配置。
-        const firebaseConfig = { 
-            apiKey: "AIzaSyDyYXFukIb4R16o8mx7cl9ZUzsCO6Y6fro", 
-            authDomain: "intelliflash-6574c.firebaseapp.com", 
-            projectId: "intelliflash-6574c", 
-            storageBucket: "intelliflash-6574c.firebasestorage.app", 
-            messagingSenderId: "730575240954", 
-            appId: "1:730575240954:web:d2771d613441f4731cd343", 
-            measurementId: "G-XFP1RE80XN" }; 
-        
-        const GEMINI_API_KEY = "AIzaSyB4kejtqBehPI0Ri1e_huC35-7Gkw7dszk"; // 留空即可，Canvas 会自动提供
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY";
         
         // ===================================================================================
         // 初始化 Firebase
@@ -333,9 +269,7 @@
         // ===================================================================================
         // 工具函数
         // ===================================================================================
-        const showLoader = (text = '') => {
-            globalLoader.classList.remove('hidden');
-        };
+        const showLoader = () => globalLoader.classList.remove('hidden');
         const hideLoader = () => globalLoader.classList.add('hidden');
 
         function showToast(message, isError = false) {
@@ -343,34 +277,32 @@
             toastMessage.textContent = message;
             toast.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
             toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
         }
         
         // ===================================================================================
         // 主题切换
         // ===================================================================================
         const themeToggle = document.getElementById('theme-toggle');
+        const htmlEl = document.documentElement;
+
+        function updateTheme(isDark) {
+            htmlEl.classList.toggle('dark', isDark);
+            themeToggle.querySelector('i').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
         themeToggle.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            const icon = themeToggle.querySelector('i');
-            if (document.documentElement.classList.contains('dark')) {
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
-                localStorage.setItem('theme', 'light');
-            }
+            updateTheme(!htmlEl.classList.contains('dark'));
         });
 
-        if (localStorage.getItem('theme') === 'dark' || 
-           (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-            themeToggle.querySelector('i').classList.replace('fa-sun', 'fa-moon');
+        function applyInitialTheme() {
+            const storedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            updateTheme(storedTheme === 'dark' || (storedTheme === null && systemPrefersDark));
         }
+        
+        applyInitialTheme();
 
         // ===================================================================================
         // 认证逻辑
@@ -413,12 +345,10 @@
             }
         });
 
-        const emailForm = document.getElementById('email-password-form');
-        emailForm.addEventListener('submit', e => e.preventDefault());
-
         document.getElementById('email-login-btn').addEventListener('click', async () => {
             const email = document.getElementById('email-input').value;
             const password = document.getElementById('password-input').value;
+            if (!email || !password) return;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 showToast('登录成功！');
@@ -431,6 +361,7 @@
         document.getElementById('email-register-btn').addEventListener('click', async () => {
             const email = document.getElementById('email-input').value;
             const password = document.getElementById('password-input').value;
+            if (!email || !password) return;
             try {
                 await createUserWithEmailAndPassword(auth, email, password);
                 showToast('注册成功，已自动登录！');
@@ -458,11 +389,12 @@
         // Gemini API 调用
         // ===================================================================================
         async function callGemini(prompt, jsonSchema = null) {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY") {
+                throw new Error("Gemini API 密钥未配置。");
+            }
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
             
-            const payload = {
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-            };
+            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
 
             if (jsonSchema) {
                 payload.generationConfig = {
@@ -481,14 +413,12 @@
                 if (!response.ok) {
                     const errorBody = await response.json();
                     console.error("Gemini API Error:", errorBody);
-                    throw new Error(`API 请求失败，状态码: ${response.status}`);
+                    throw new Error(`API 请求失败: ${errorBody?.error?.message || response.status}`);
                 }
 
                 const result = await response.json();
                 const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!text) {
-                    throw new Error("API 返回了无效的响应格式");
-                }
+                if (!text) throw new Error("API 返回了无效的响应格式");
                 return text;
             } catch (error) {
                 console.error("调用 Gemini API 时出错:", error);
@@ -497,7 +427,7 @@
         }
 
         // ===================================================================================
-        // 卡组 CRUD 逻辑 (集成 AI)
+        // 卡组 CRUD 逻辑
         // ===================================================================================
         const setModal = document.getElementById('set-modal');
         const createSetBtn = document.getElementById('create-set-btn');
@@ -657,14 +587,15 @@
                         ? doc(collection(db, `sets/${savedSetId}/cards`))
                         : doc(db, `sets/${savedSetId}/cards`, cardId);
                     
-                    const cardData = {
-                        term,
-                        definition,
-                        easeFactor: 2.5,
-                        interval: 0,
-                        repetitions: 0,
-                        nextReview: new Date()
-                    };
+                    const cardData = { term, definition };
+                    if (isNewCard) {
+                        Object.assign(cardData, {
+                            easeFactor: 2.5,
+                            interval: 0,
+                            repetitions: 0,
+                            nextReview: new Date()
+                        });
+                    }
 
                     const imageInput = group.querySelector('.image-upload-input');
                     const imageFile = imageInput.files[0];
@@ -680,7 +611,6 @@
                 }
                 
                 await batch.commit();
-
                 showToast(`卡组已${setId ? '更新' : '创建'}！`);
                 setModal.classList.add('hidden');
                 loadUserSets();
@@ -696,6 +626,7 @@
             if (!confirm('确定要删除这个卡组吗？所有相关的卡片和学习进度都将被永久删除。')) return;
             showLoader();
             try {
+                // In a real app, you'd also delete subcollections and storage files.
                 await deleteDoc(doc(db, 'sets', setId));
                 showToast('卡组已删除。');
                 loadUserSets();
@@ -716,16 +647,17 @@
                 setsContainer.innerHTML = '';
                 if (querySnapshot.empty) {
                     setsContainer.innerHTML = '<p class="text-center col-span-full">你还没有创建任何卡组。点击上方按钮开始吧！</p>';
-                }
-                for (const docSnap of querySnapshot.docs) {
-                    const set = { id: docSnap.id, ...docSnap.data() };
-                    const cardsSnapshot = await getDocs(collection(db, `sets/${set.id}/cards`));
-                    set.cardCount = cardsSnapshot.size;
-                    setsContainer.appendChild(createSetCard(set));
+                } else {
+                    for (const docSnap of querySnapshot.docs) {
+                        const set = { id: docSnap.id, ...docSnap.data() };
+                        const cardsSnapshot = await getDocs(collection(db, `sets/${set.id}/cards`));
+                        set.cardCount = cardsSnapshot.size;
+                        setsContainer.appendChild(createSetCard(set));
+                    }
                 }
             } catch (error) {
                 console.error("加载卡组失败:", error);
-                showToast('加载卡组失败', true);
+                showToast('加载你的卡组时出错。请检查控制台获取详情。', true);
             } finally {
                 hideLoader();
             }
@@ -737,30 +669,17 @@
             
             let buttonsHtml = '';
             if (isPublic) {
-                buttonsHtml = `
-                    <button class="clone-set-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full">
-                        <i class="fas fa-clone mr-2"></i>克隆到我的卡组
-                    </button>
-                `;
+                buttonsHtml = `<button class="clone-set-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full"><i class="fas fa-clone mr-2"></i>克隆到我的卡组</button>`;
             } else {
                 buttonsHtml = `
                     <div class="grid grid-cols-2 gap-2 mt-4">
-                        <button class="study-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                           <i class="fas fa-book-open mr-2"></i>学习
-                        </button>
-                        <button class="stats-btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded">
-                           <i class="fas fa-chart-line mr-2"></i>统计
-                        </button>
+                        <button class="study-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-book-open mr-2"></i>学习</button>
+                        <button class="stats-btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-chart-line mr-2"></i>统计</button>
                     </div>
                     <div class="grid grid-cols-2 gap-2 mt-2">
-                         <button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
-                           <i class="fas fa-edit mr-2"></i>编辑
-                        </button>
-                        <button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
-                           <i class="fas fa-trash mr-2"></i>删除
-                        </button>
-                    </div>
-                `;
+                         <button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-edit mr-2"></i>编辑</button>
+                        <button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-trash mr-2"></i>删除</button>
+                    </div>`;
             }
 
             card.innerHTML = `
@@ -770,10 +689,7 @@
                     <p class="text-sm text-gray-500">${set.cardCount || 0} 张卡片</p>
                     ${isPublic ? `<p class="text-sm text-gray-500 mt-1">创建者: ${set.ownerName || '匿名'}</p>` : ''}
                 </div>
-                <div class="mt-4">
-                    ${buttonsHtml}
-                </div>
-            `;
+                <div class="mt-4">${buttonsHtml}</div>`;
 
             if (isPublic) {
                 card.querySelector('.clone-set-btn').addEventListener('click', () => cloneSet(set.id));
@@ -781,8 +697,10 @@
                 card.querySelector('.study-btn').addEventListener('click', () => startStudy(set.id));
                 card.querySelector('.stats-btn').addEventListener('click', () => showStatsPage(set.id));
                 card.querySelector('.edit-btn').addEventListener('click', async () => {
+                    showLoader();
                     const cardsSnapshot = await getDocs(collection(db, `sets/${set.id}/cards`));
                     const cards = cardsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    hideLoader();
                     openSetModal({ ...set, cards });
                 });
                 card.querySelector('.delete-btn').addEventListener('click', () => deleteSet(set.id));
@@ -862,12 +780,10 @@
             try {
                 const originalSetRef = doc(db, 'sets', setId);
                 const originalSetSnap = await getDoc(originalSetRef);
-                if (!originalSetSnap.exists()) {
-                    throw new Error("原始卡组不存在");
-                }
+                if (!originalSetSnap.exists()) throw new Error("原始卡组不存在");
+                
                 const originalSetData = originalSetSnap.data();
-
-                const newSetData = {
+                const newSetRef = await addDoc(collection(db, 'sets'), {
                     title: originalSetData.title,
                     description: originalSetData.description,
                     isPublic: false,
@@ -876,13 +792,10 @@
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp(),
                     clonedFrom: setId,
-                };
-                const newSetRef = await addDoc(collection(db, 'sets'), newSetData);
+                });
 
-                const originalCardsRef = collection(db, `sets/${setId}/cards`);
-                const originalCardsSnap = await getDocs(originalCardsRef);
+                const originalCardsSnap = await getDocs(collection(db, `sets/${setId}/cards`));
                 const batch = writeBatch(db);
-
                 originalCardsSnap.forEach(cardDoc => {
                     const newCardRef = doc(collection(db, `sets/${newSetRef.id}/cards`));
                     batch.set(newCardRef, cardDoc.data());
@@ -900,7 +813,7 @@
         }
 
         // ===================================================================================
-        // 学习逻辑 (集成 AI)
+        // 学习逻辑
         // ===================================================================================
         let currentSetCards = [];
         let currentCardIndex = 0;
@@ -916,17 +829,19 @@
                 
                 if (allCardsInCurrentSet.length === 0) {
                     showToast('这个卡组里没有卡片！', true);
+                    hideLoader();
                     return;
                 }
                 
                 const now = new Date();
                 const dueCards = allCardsInCurrentSet.filter(card => {
-                    const nextReviewDate = card.nextReview.toDate ? card.nextReview.toDate() : new Date(card.nextReview);
+                    const nextReviewDate = card.nextReview?.toDate ? card.nextReview.toDate() : new Date(0);
                     return nextReviewDate <= now;
                 });
 
                 if (dueCards.length === 0) {
                      showToast('太棒了！今天没有需要复习的卡片。');
+                     hideLoader();
                      return;
                 }
                 
@@ -951,22 +866,13 @@
                     <h2 class="text-3xl font-bold mb-2">选择学习模式</h2>
                     <p class="text-gray-600 dark:text-gray-400 mb-8">今天有 ${currentSetCards.length} 张卡片需要复习。</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                        <button data-mode="flashcard" class="study-mode-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-6 px-4 rounded-lg text-xl">
-                            <i class="fas fa-clone mr-3"></i>翻卡学习
-                        </button>
-                        <button data-mode="spell" class="study-mode-btn bg-green-500 hover:bg-green-600 text-white font-bold py-6 px-4 rounded-lg text-xl">
-                            <i class="fas fa-keyboard mr-3"></i>拼写
-                        </button>
-                        <button data-mode="quiz" class="study-mode-btn bg-purple-500 hover:bg-purple-600 text-white font-bold py-6 px-4 rounded-lg text-xl">
-                            <i class="fas fa-question-circle mr-3"></i>✨ AI 增强测验
-                        </button>
-                        <button data-mode="match" class="study-mode-btn bg-orange-500 hover:bg-orange-600 text-white font-bold py-6 px-4 rounded-lg text-xl">
-                            <i class="fas fa-gamepad mr-3"></i>匹配游戏
-                        </button>
+                        <button data-mode="flashcard" class="study-mode-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-6 px-4 rounded-lg text-xl"><i class="fas fa-clone mr-3"></i>翻卡学习</button>
+                        <button data-mode="spell" class="study-mode-btn bg-green-500 hover:bg-green-600 text-white font-bold py-6 px-4 rounded-lg text-xl"><i class="fas fa-keyboard mr-3"></i>拼写</button>
+                        <button data-mode="quiz" class="study-mode-btn bg-purple-500 hover:bg-purple-600 text-white font-bold py-6 px-4 rounded-lg text-xl"><i class="fas fa-question-circle mr-3"></i>✨ AI 增强测验</button>
+                        <button data-mode="match" class="study-mode-btn bg-orange-500 hover:bg-orange-600 text-white font-bold py-6 px-4 rounded-lg text-xl"><i class="fas fa-gamepad mr-3"></i>匹配游戏</button>
                     </div>
                     <button id="back-to-main-from-study" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回</button>
-                </div>
-            `;
+                </div>`;
             document.querySelectorAll('.study-mode-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const mode = e.currentTarget.dataset.mode;
@@ -1008,12 +914,12 @@
                     </div>
                     <div id="flashcard-container" class="relative w-full h-80 perspective-1000">
                         <div id="flashcard" class="card w-full h-full relative">
-                            <div class="card-face absolute w-full h-full flex flex-col justify-center items-center p-6 rounded-lg shadow-lg bg-white dark:bg-gray-700 border">
+                            <div class="card-face absolute w-full h-full flex flex-col justify-center items-center p-6 rounded-lg shadow-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
                                 <p class="text-3xl text-center">${card.term}</p>
                                 ${card.imageUrl ? `<img src="${card.imageUrl}" class="max-h-32 mt-4 rounded">` : ''}
                                 <button class="tts-btn absolute top-4 right-4 text-xl text-blue-500"><i class="fas fa-volume-up"></i></button>
                             </div>
-                            <div class="card-face card-face-back absolute w-full h-full flex justify-center items-center p-6 rounded-lg shadow-lg bg-gray-100 dark:bg-gray-600 border">
+                            <div class="card-face card-face-back absolute w-full h-full flex justify-center items-center p-6 rounded-lg shadow-lg bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-500">
                                 <p class="text-3xl text-center">${card.definition}</p>
                                 <button class="tts-btn absolute top-4 right-4 text-xl text-blue-500"><i class="fas fa-volume-up"></i></button>
                             </div>
@@ -1023,27 +929,23 @@
                         <button id="flip-card-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg text-lg">翻转</button>
                     </div>
                     <div id="srs-buttons" class="hidden mt-6 grid grid-cols-4 gap-4">
-                        <button data-rating="1" class="srs-btn srs-btn-again text-white font-bold py-3 px-4 rounded-lg">重来 (Again)</button>
-                        <button data-rating="2" class="srs-btn srs-btn-hard text-white font-bold py-3 px-4 rounded-lg">困难 (Hard)</button>
-                        <button data-rating="3" class="srs-btn srs-btn-good text-white font-bold py-3 px-4 rounded-lg">一般 (Good)</button>
-                        <button data-rating="4" class="srs-btn srs-btn-easy text-white font-bold py-3 px-4 rounded-lg">简单 (Easy)</button>
+                        <button data-rating="1" class="srs-btn srs-btn-again text-white font-bold py-3 px-4 rounded-lg">重来</button>
+                        <button data-rating="2" class="srs-btn srs-btn-hard text-white font-bold py-3 px-4 rounded-lg">困难</button>
+                        <button data-rating="3" class="srs-btn srs-btn-good text-white font-bold py-3 px-4 rounded-lg">一般</button>
+                        <button data-rating="4" class="srs-btn srs-btn-easy text-white font-bold py-3 px-4 rounded-lg">简单</button>
                     </div>
-                </div>
-            `;
+                </div>`;
             
-            const flashcard = document.getElementById('flashcard');
             const flipBtn = document.getElementById('flip-card-btn');
-            
             flipBtn.addEventListener('click', () => {
-                flashcard.classList.add('is-flipped');
+                document.getElementById('flashcard').classList.add('is-flipped');
                 flipBtn.classList.add('hidden');
                 document.getElementById('srs-buttons').classList.remove('hidden');
             });
             
             document.querySelectorAll('.srs-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const rating = parseInt(e.currentTarget.dataset.rating);
-                    updateSrsData(card, rating);
+                    updateSrsData(card, parseInt(e.currentTarget.dataset.rating));
                     currentCardIndex++;
                     showFlashcard();
                 });
@@ -1052,8 +954,7 @@
             document.querySelectorAll('.tts-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const textToSpeak = e.currentTarget.closest('.card-face').querySelector('p').textContent;
-                    speakText(textToSpeak);
+                    speakText(e.currentTarget.closest('.card-face').querySelector('p').textContent);
                 });
             });
             
@@ -1085,13 +986,10 @@
                         <button id="check-spell-btn" class="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-lg">检查</button>
                     </div>
                     <div id="spell-result" class="mt-4 text-center"></div>
-                </div>
-            `;
+                </div>`;
             
             document.getElementById('check-spell-btn').addEventListener('click', checkSpelling);
-            document.getElementById('spell-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') checkSpelling();
-            });
+            document.getElementById('spell-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkSpelling(); });
             document.querySelector('.tts-btn').addEventListener('click', () => speakText(card.term));
             document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
         }
@@ -1106,22 +1004,12 @@
                 resultDiv.innerHTML = `<p class="text-green-500 font-bold text-2xl">正确!</p>`;
                 input.style.borderColor = 'green';
                 updateSrsData(card, 3);
-                setTimeout(() => {
-                    currentCardIndex++;
-                    showSpellCard();
-                }, 1000);
+                setTimeout(() => { currentCardIndex++; showSpellCard(); }, 1000);
             } else {
-                resultDiv.innerHTML = `
-                    <p class="text-red-500 font-bold text-2xl">错误!</p>
-                    <p class="text-lg mt-2">正确答案: <span class="font-semibold">${card.definition}</span></p>
-                `;
+                resultDiv.innerHTML = `<p class="text-red-500 font-bold text-2xl">错误!</p><p class="text-lg mt-2">正确答案: <span class="font-semibold">${card.definition}</span></p>`;
                 input.style.borderColor = 'red';
                 updateSrsData(card, 1);
-                setTimeout(() => {
-                    currentSetCards.push(card); 
-                    currentCardIndex++;
-                    showSpellCard();
-                }, 3000);
+                setTimeout(() => { currentSetCards.push(card); currentCardIndex++; showSpellCard(); }, 3000);
             }
             document.getElementById('check-spell-btn').disabled = true;
         }
@@ -1138,7 +1026,6 @@
             }
             
             const card = currentSetCards[currentCardIndex];
-            
             studyPage.innerHTML = `
                 <div class="p-4 max-w-2xl mx-auto">
                     <div class="flex justify-between items-center mb-4">
@@ -1148,25 +1035,19 @@
                     <div class="bg-white dark:bg-gray-700 p-8 rounded-lg shadow-lg">
                         <p class="text-2xl mb-6 text-center">${card.term}</p>
                         <div id="quiz-options" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="flex justify-center items-center col-span-full h-24">
-                                <div class="loader"></div> <span class="ml-4">AI 正在生成测验选项...</span>
-                            </div>
+                            <div class="flex justify-center items-center col-span-full h-24"><div class="loader"></div><span class="ml-4">AI 正在生成测验选项...</span></div>
                         </div>
                     </div>
                     <div id="quiz-result" class="mt-4 text-center"></div>
-                </div>
-            `;
+                </div>`;
             document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
 
             try {
                 const options = await generateQuizOptions(card);
-                
                 const optionsContainer = document.getElementById('quiz-options');
                 if (optionsContainer) {
                     optionsContainer.innerHTML = options.map(opt => `<button class="quiz-option-btn p-4 border rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-600">${opt}</button>`).join('');
-                    document.querySelectorAll('.quiz-option-btn').forEach(btn => {
-                        btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card));
-                    });
+                    document.querySelectorAll('.quiz-option-btn').forEach(btn => btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card)));
                 }
             } catch (error) {
                  showToast(`AI 生成选项失败: ${error.message}`, true);
@@ -1174,9 +1055,7 @@
                  const optionsContainer = document.getElementById('quiz-options');
                  if (optionsContainer) {
                     optionsContainer.innerHTML = fallbackOptions.map(opt => `<button class="quiz-option-btn p-4 border rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-600">${opt}</button>`).join('');
-                    document.querySelectorAll('.quiz-option-btn').forEach(btn => {
-                        btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card));
-                    });
+                    document.querySelectorAll('.quiz-option-btn').forEach(btn => btn.addEventListener('click', (e) => checkQuizAnswer(e.target, card)));
                  }
             }
         }
@@ -1185,93 +1064,53 @@
             const prompt = `为多项选择题生成3个看起来合理但错误的干扰选项。问题是'${correctCard.term}'，正确答案是'${correctCard.definition}'。请确保干扰项与正确答案的格式和主题相似。`;
             const schema = {
                 type: "OBJECT",
-                properties: {
-                    distractors: {
-                        type: "ARRAY",
-                        items: { type: "STRING" }
-                    }
-                },
+                properties: { distractors: { type: "ARRAY", items: { type: "STRING" } } },
                 required: ["distractors"]
             };
-
-            try {
-                const jsonString = await callGemini(prompt, schema);
-                const { distractors } = JSON.parse(jsonString);
-                const options = [correctCard.definition, ...distractors];
-                return shuffleArray(options);
-            } catch (e) {
-                console.error("AI 生成干扰项失败, 使用备用方案", e);
-                return generateFallbackQuizOptions(correctCard);
-            }
+            const jsonString = await callGemini(prompt, schema);
+            const { distractors } = JSON.parse(jsonString);
+            return shuffleArray([correctCard.definition, ...distractors]);
         }
         
         function generateFallbackQuizOptions(correctCard) {
-            let options = [correctCard.definition];
-            const wrongOptions = allCardsInCurrentSet
-                .filter(c => c.id !== correctCard.id)
-                .map(c => c.definition);
-            
-            const shuffledWrong = shuffleArray(wrongOptions);
-            
-            for (let i = 0; i < Math.min(3, shuffledWrong.length); i++) {
-                options.push(shuffledWrong[i]);
-            }
-            
+            const wrongOptions = allCardsInCurrentSet.filter(c => c.id !== correctCard.id).map(c => c.definition);
+            const options = [correctCard.definition, ...shuffleArray(wrongOptions).slice(0, 3)];
             return shuffleArray(options);
         }
 
         function checkQuizAnswer(button, card) {
             const answer = button.textContent;
-            const resultDiv = document.getElementById('quiz-result');
             document.querySelectorAll('.quiz-option-btn').forEach(btn => btn.disabled = true);
 
             if (answer === card.definition) {
                 button.classList.add('bg-green-200', 'dark:bg-green-800');
-                resultDiv.innerHTML = `<p class="text-green-500 font-bold text-2xl">正确!</p>`;
+                document.getElementById('quiz-result').innerHTML = `<p class="text-green-500 font-bold text-2xl">正确!</p>`;
                 updateSrsData(card, 3);
-                setTimeout(() => {
-                    currentCardIndex++;
-                    showQuizQuestion();
-                }, 1000);
+                setTimeout(() => { currentCardIndex++; showQuizQuestion(); }, 1000);
             } else {
                 button.classList.add('bg-red-200', 'dark:bg-red-800');
                 document.querySelectorAll('.quiz-option-btn').forEach(btn => {
-                    if (btn.textContent === card.definition) {
-                        btn.classList.add('bg-green-200', 'dark:bg-green-800');
-                    }
+                    if (btn.textContent === card.definition) btn.classList.add('bg-green-200', 'dark:bg-green-800');
                 });
-                resultDiv.innerHTML = `<p class="text-red-500 font-bold text-2xl">错误!</p>`;
+                document.getElementById('quiz-result').innerHTML = `<p class="text-red-500 font-bold text-2xl">错误!</p>`;
                 updateSrsData(card, 1);
-                setTimeout(() => {
-                    currentSetCards.push(card);
-                    currentCardIndex++;
-                    showQuizQuestion();
-                }, 3000);
+                setTimeout(() => { currentSetCards.push(card); currentCardIndex++; showQuizQuestion(); }, 3000);
             }
         }
         
         function renderMatchMode() {
-            const gameSize = Math.min(6, Math.floor(currentSetCards.length / 2) * 2);
-            if (gameSize < 2) {
-                studyPage.innerHTML = `
-                    <div class="text-center p-8">
-                        <h2 class="text-2xl font-bold mb-4">无法开始匹配游戏</h2>
-                        <p>需要至少 2 张卡片才能玩这个游戏。</p>
-                        <button id="back-to-modes" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回模式选择</button>
-                    </div>
-                `;
+            const gameCards = shuffleArray(currentSetCards).slice(0, Math.min(6, currentSetCards.length));
+            if (gameCards.length < 2) {
+                studyPage.innerHTML = `<div class="text-center p-8"><h2 class="text-2xl font-bold mb-4">无法开始匹配游戏</h2><p>需要至少 2 张卡片才能玩这个游戏。</p><button id="back-to-modes" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回模式选择</button></div>`;
                 document.getElementById('back-to-modes').addEventListener('click', showStudyModeSelection);
                 return;
             }
 
-            const gameCards = shuffleArray(currentSetCards).slice(0, gameSize);
             const items = [];
             gameCards.forEach((card, index) => {
-                items.push({ id: index, content: card.term, matchId: index });
-                items.push({ id: index, content: card.definition, matchId: index });
+                items.push({ content: card.term, matchId: index });
+                items.push({ content: card.definition, matchId: index });
             });
-
-            const shuffledItems = shuffleArray(items);
             
             studyPage.innerHTML = `
                 <div class="p-4 max-w-4xl mx-auto">
@@ -1280,45 +1119,34 @@
                         <button id="back-to-modes" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">返回模式选择</button>
                     </div>
                     <div id="match-grid" class="grid grid-cols-3 md:grid-cols-4 gap-4">
-                        ${shuffledItems.map(item => `
-                            <div class="match-item h-24 flex justify-center items-center p-2 text-center border-2 rounded-lg cursor-pointer transition-all duration-300 bg-white dark:bg-gray-700" data-match-id="${item.matchId}">
-                                ${item.content}
-                            </div>
-                        `).join('')}
+                        ${shuffleArray(items).map(item => `<div class="match-item h-24 flex justify-center items-center p-2 text-center border-2 rounded-lg cursor-pointer transition-all duration-300 bg-white dark:bg-gray-700" data-match-id="${item.matchId}">${item.content}</div>`).join('')}
                     </div>
-                </div>
-            `;
+                </div>`;
             
             let selectedItem = null;
             document.querySelectorAll('.match-item').forEach(item => {
                 item.addEventListener('click', () => {
-                    if (item.classList.contains('matched')) return;
+                    if (item.classList.contains('matched') || selectedItem === item) return;
+
+                    item.classList.add('selected');
 
                     if (!selectedItem) {
                         selectedItem = item;
-                        item.classList.add('selected');
                     } else {
-                        if (selectedItem === item) {
-                            selectedItem.classList.remove('selected');
-                            selectedItem = null;
-                        } else if (selectedItem.dataset.matchId === item.dataset.matchId) {
+                        if (selectedItem.dataset.matchId === item.dataset.matchId) {
                             item.classList.add('matched');
                             selectedItem.classList.add('matched');
                             selectedItem = null;
-                            
                             if (document.querySelectorAll('.match-item:not(.matched)').length === 0) {
-                                setTimeout(() => {
-                                    showToast('太棒了，全部匹配成功！');
-                                    finishStudySession();
-                                }, 500);
+                                setTimeout(() => { showToast('太棒了，全部匹配成功！'); finishStudySession(); }, 500);
                             }
                         } else {
-                            item.classList.add('selected');
+                            const tempSelectedItem = selectedItem;
                             setTimeout(() => {
                                 item.classList.remove('selected');
-                                selectedItem.classList.remove('selected');
-                                selectedItem = null;
+                                tempSelectedItem.classList.remove('selected');
                             }, 500);
+                            selectedItem = null;
                         }
                     }
                 });
@@ -1332,8 +1160,7 @@
                     <h2 class="text-3xl font-bold mb-4">🎉 恭喜你！</h2>
                     <p class="text-xl text-gray-600 dark:text-gray-400">本次学习已完成。</p>
                     <button id="back-to-main-from-finish" class="mt-8 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg text-lg">返回主页</button>
-                </div>
-            `;
+                </div>`;
             document.getElementById('back-to-main-from-finish').addEventListener('click', backToMain);
         }
         
@@ -1349,27 +1176,22 @@
         // SRS (间隔重复) 逻辑
         // ===================================================================================
         async function updateSrsData(card, rating) {
-            // BUG FIX: Add guard clause to prevent empty path error.
             if (!currentSetId || !card || !card.id) {
                 console.error("无法更新SRS数据：缺少卡组ID或卡片ID。", { currentSetId, cardId: card?.id });
                 showToast("发生内部错误，无法保存学习进度。", true);
                 return; 
             }
 
-            let { easeFactor, interval, repetitions } = card;
+            let { easeFactor = 2.5, interval = 0, repetitions = 0 } = card;
             
             if (rating < 3) {
                 repetitions = 0;
                 interval = 1;
             } else {
                 repetitions += 1;
-                if (repetitions === 1) {
-                    interval = 1;
-                } else if (repetitions === 2) {
-                    interval = 6;
-                } else {
-                    interval = Math.round(interval * easeFactor);
-                }
+                if (repetitions === 1) interval = 1;
+                else if (repetitions === 2) interval = 6;
+                else interval = Math.round(interval * easeFactor);
             }
             
             easeFactor = easeFactor + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02));
@@ -1378,23 +1200,21 @@
             const nextReview = new Date();
             nextReview.setDate(nextReview.getDate() + interval);
             
-            const updatedData = {
-                easeFactor,
-                interval,
-                repetitions,
-                nextReview
-            };
-            
-            const historyRef = collection(db, `users/${currentUser.uid}/history`);
-            await addDoc(historyRef, {
-                cardId: card.id,
-                setId: currentSetId,
-                rating: rating,
-                reviewedAt: serverTimestamp()
-            });
-
-            const cardRef = doc(db, `sets/${currentSetId}/cards`, card.id);
-            await updateDoc(cardRef, updatedData);
+            try {
+                const cardRef = doc(db, `sets/${currentSetId}/cards`, card.id);
+                await updateDoc(cardRef, { easeFactor, interval, repetitions, nextReview });
+                
+                const historyRef = collection(db, `users/${currentUser.uid}/history`);
+                await addDoc(historyRef, {
+                    cardId: card.id,
+                    setId: currentSetId,
+                    rating: rating,
+                    reviewedAt: serverTimestamp()
+                });
+            } catch (error) {
+                console.error("更新SRS数据时出错:", error);
+                showToast("保存学习进度失败。", true);
+            }
         }
 
         // ===================================================================================
@@ -1407,8 +1227,8 @@
             try {
                 const cardsSnapshot = await getDocs(collection(db, `sets/${setId}/cards`));
                 const srsStatus = { '新卡片': 0, '学习中': 0, '巩固中': 0, '已掌握': 0 };
-                cardsSnapshot.forEach(doc => {
-                    const card = doc.data();
+                cardsSnapshot.forEach(docSnap => {
+                    const card = docSnap.data();
                     if (card.repetitions === 0) srsStatus['新卡片']++;
                     else if (card.interval < 7) srsStatus['学习中']++;
                     else if (card.interval < 30) srsStatus['巩固中']++;
@@ -1423,23 +1243,23 @@
                 const historySnapshot = await getDocs(q);
                 
                 const reviewActivity = {};
-                for (let i = 0; i < 7; i++) {
+                const labels = [];
+                for (let i = 6; i >= 0; i--) {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
                     const key = d.toISOString().split('T')[0];
+                    labels.push(key);
                     reviewActivity[key] = 0;
                 }
                 
-                historySnapshot.forEach(doc => {
-                    const data = doc.data();
+                historySnapshot.forEach(docSnap => {
+                    const data = docSnap.data();
                     if (data.reviewedAt) {
                          const dateKey = data.reviewedAt.toDate().toISOString().split('T')[0];
-                         if (reviewActivity.hasOwnProperty(dateKey)) {
-                             reviewActivity[dateKey]++;
-                         }
+                         if (reviewActivity.hasOwnProperty(dateKey)) reviewActivity[dateKey]++;
                     }
                 });
-                renderReviewActivityChart(reviewActivity);
+                renderReviewActivityChart(reviewActivity, labels);
 
             } catch (error) {
                 console.error("加载统计数据失败:", error);
@@ -1463,15 +1283,13 @@
                         data: Object.values(data),
                         backgroundColor: ['#42A5F5', '#FFA726', '#66BB6A', '#AB47BC'],
                     }]
-                }
+                },
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
         
-        function renderReviewActivityChart(data) {
+        function renderReviewActivityChart(data, labels) {
             const ctx = document.getElementById('review-activity-chart').getContext('2d');
-            const labels = Object.keys(data).sort();
-            const values = labels.map(label => data[label]);
-
             if (reviewActivityChart) reviewActivityChart.destroy();
             reviewActivityChart = new Chart(ctx, {
                 type: 'bar',
@@ -1479,16 +1297,15 @@
                     labels: labels,
                     datasets: [{
                         label: '每日复习次数',
-                        data: values,
+                        data: labels.map(label => data[label]),
                         backgroundColor: 'rgba(74, 144, 226, 0.6)',
                         borderColor: 'rgba(74, 144, 226, 1)',
                         borderWidth: 1
                     }]
                 },
                 options: {
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                    }
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
                 }
             });
         }
@@ -1498,66 +1315,28 @@
         // ===================================================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker 注册成功:', reg))
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker 注册成功:', reg.scope))
                     .catch(err => console.log('Service Worker 注册失败:', err));
             });
         }
         
         function initNotifications() {
-            if ('Notification' in window && Notification.permission !== 'granted') {
+            if (!('Notification' in window)) return;
+            if (Notification.permission !== 'granted') {
                 Notification.requestPermission().then(permission => {
                     if (permission === 'granted') {
                         showToast('通知已启用！');
-                        scheduleDailyReminder();
                     }
                 });
-            } else if (Notification.permission === 'granted') {
-                scheduleDailyReminder();
             }
-        }
-
-        async function scheduleDailyReminder() {
-            if (!currentUser || !('serviceWorker' in navigator) || !navigator.serviceWorker.ready) return;
-
-            const registration = await navigator.serviceWorker.ready;
-            const existingNotifications = await registration.getNotifications({ tag: 'daily-reminder' });
-            if (existingNotifications.length > 0) return;
-
-            const now = new Date();
-            let reminderTime = new Date();
-            reminderTime.setHours(20, 0, 0, 0);
-
-            if (now > reminderTime) {
-                reminderTime.setDate(reminderTime.getDate() + 1);
-            }
-            
-            const timeDiff = reminderTime.getTime() - now.getTime();
-            
-            setTimeout(() => {
-                 registration.showNotification('今天的学习时间到了！', {
-                    body: '打开 IntelliFlash，巩固你的记忆吧！',
-                    icon: 'https://placehold.co/192x192/4A90E2/FFFFFF?text=IF',
-                    tag: 'daily-reminder'
-                });
-                setInterval(() => {
-                    registration.showNotification('今天的学习时间到了！', {
-                        body: '打开 IntelliFlash，巩固你的记忆吧！',
-                        icon: 'https://placehold.co/192x192/4A90E2/FFFFFF?text=IF',
-                        tag: 'daily-reminder'
-                    });
-                }, 24 * 60 * 60 * 1000);
-            }, timeDiff);
         }
         
         function speakText(text) {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
-                if (/[\u4e00-\u9fa5]/.test(text)) {
-                    utterance.lang = 'zh-CN';
-                } else {
-                    utterance.lang = 'en-US';
-                }
+                if (/[\u4e00-\u9fa5]/.test(text)) utterance.lang = 'zh-CN';
+                else utterance.lang = 'en-US';
                 window.speechSynthesis.speak(utterance);
             } else {
                 showToast('你的浏览器不支持语音功能。', true);
@@ -1565,6 +1344,5 @@
         }
 
     </script>
-    
 </body>
 </html>
